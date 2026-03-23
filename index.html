@@ -2,7 +2,7 @@
 <html lang="nl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Stamboek Familie Hogenes</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;1,8..60,300&display=swap" rel="stylesheet">
 <style>
@@ -581,12 +581,148 @@
     flex-shrink: 0;
   }
 
-  @media (max-width: 600px) {
-    .stat-label { display: none; }
-    .stat-num { font-size: 18px; }
-    .grid { grid-template-columns: 1fr; }
-    .filter-row { gap: 6px; }
+
+/* ═══════════════════════════════════════════════════
+   RESPONSIVE — mobile-first adjustments
+   ═══════════════════════════════════════════════════ */
+
+/* ── Base: ensure no horizontal overflow ── */
+html, body { overflow-x: hidden; }
+* { box-sizing: border-box; }
+
+/* ── Touch targets ── */
+@media (max-width: 768px) {
+
+  /* Header */
+  .header-inner { padding: 24px 16px 20px; }
+  h1 { font-size: clamp(22px, 6vw, 36px); }
+  .header-sub, .header-meta { font-size: 12px; }
+
+  /* Stats */
+  .stat { padding: 10px 4px; }
+  .stat-num { font-size: 18px; }
+  .stat-label { font-size: 9px; }
+
+  /* Tabs */
+  .view-tab { padding: 10px 12px; font-size: 11px; letter-spacing: 0; }
+  #editModeBtn { padding: 10px 10px; font-size: 11px; }
+
+  /* Controls */
+  .controls { padding: 16px 12px 0; }
+  input[type="search"] { font-size: 16px; /* prevent iOS zoom */ }
+  .filter-row { gap: 5px; overflow-x: auto; flex-wrap: nowrap; padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .filter-row::-webkit-scrollbar { display: none; }
+  .filter-btn { font-size: 12px; padding: 5px 10px; white-space: nowrap; }
+  .legend { padding: 0 12px 12px; }
+
+  /* Grid */
+  .grid { padding: 12px 12px 60px; grid-template-columns: 1fr; gap: 10px; }
+
+  /* Card */
+  .card-body { padding: 12px; }
+  .card-name { font-size: 15px; }
+  .card-photo { width: 52px; height: 66px; }
+
+  /* Modal overlay — full screen on mobile */
+  .modal-overlay { padding: 0; align-items: flex-end; }
+  .modal {
+    border-radius: 16px 16px 0 0;
+    max-width: 100%;
+    max-height: 92vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
   }
+  .modal-nav { height: 48px; padding: 0 6px; }
+  .mnav-btn { width: 40px; height: 40px; font-size: 20px; }
+  .mnav-close { padding: 6px 10px; }
+  .mnav-crumb { max-width: 80px; font-size: 11px; }
+  .modal-header { padding: 16px 16px 14px; flex-shrink: 0; }
+  .modal-name { font-size: 20px; }
+  .modal-photo { width: 70px; height: 86px; }
+  .modal-body { padding: 14px 16px 20px; overflow-y: auto; flex: 1; -webkit-overflow-scrolling: touch; }
+  .parent-strip { padding: 8px 16px; }
+  .detail-row { gap: 8px; }
+  .detail-label { min-width: 70px; font-size: 11px; }
+  .child-list li { padding: 8px 6px; }
+  .child-thumb { width: 28px; height: 34px; }
+
+  /* Partner row */
+  .partner-row { gap: 10px; }
+  .partner-photo { width: 58px; height: 72px; }
+  .partner-add-btn { width: 58px; height: 72px; }
+
+  /* Tree view */
+  #treeView.visible { height: calc(100vh - 80px); }
+  #treeSearch { top: 10px; left: 10px; }
+  #treeSearchInput { width: 160px; font-size: 13px; }
+  #treeControls { top: 10px; right: 10px; gap: 5px; }
+  .tree-btn { width: 30px; height: 30px; font-size: 15px; }
+  .tree-btn.wide { width: auto; padding: 0 10px; font-size: 11px; }
+  #treeHint { font-size: 10px; }
+
+  /* Photo editor */
+  #photoEditor { width: 100%; border-radius: 16px 16px 0 0; max-height: 96vh; }
+  #photoEditorOverlay { align-items: flex-end; padding: 0; }
+  #peHeader { padding: 12px 16px; }
+  #peBody { padding: 14px 16px; gap: 12px; }
+  #peCropWrap { max-height: 260px; }
+  #peActions { flex-wrap: wrap; gap: 6px; }
+  .pe-btn { padding: 8px 12px; font-size: 12px; }
+
+  /* Person editor */
+  #personEditor { border-radius: 16px 16px 0 0; width: 100%; }
+  #personEditorOverlay { align-items: flex-end; padding: 0; }
+  #pePersonBody { padding: 14px 16px; gap: 10px; }
+  .pe-row { flex-direction: column; gap: 10px; }
+  .pe-field input, .pe-field select { font-size: 16px; /* prevent iOS zoom */ }
+  #pePersonActions { padding: 12px 16px 24px; }
+
+  /* PIN dialog */
+  #pinBox { width: calc(100% - 32px); padding: 24px 20px; }
+
+  /* DB status */
+  #dbStatus { bottom: 8px; right: 10px; font-size: 10px; padding: 3px 8px; }
+
+  /* Config notice */
+  #configNotice { margin: 10px 12px 0; font-size: 12px; padding: 10px 14px; }
+
+  /* Add child button */
+  .add-child-btn { font-size: 12px; padding: 8px 12px; }
+}
+
+/* ── Medium: tablet ── */
+@media (min-width: 481px) and (max-width: 768px) {
+  .grid { grid-template-columns: repeat(2, 1fr); }
+  .modal-overlay { padding: 16px; align-items: center; }
+  .modal { border-radius: 12px; max-height: 88vh; }
+  #photoEditorOverlay { align-items: center; padding: 12px; }
+  #photoEditor { border-radius: 12px; width: min(520px, 96vw); }
+  #personEditorOverlay { align-items: center; padding: 12px; }
+  #personEditor { border-radius: 12px; }
+  .pe-row { flex-direction: row; }
+}
+
+/* ── Small mobile ── */
+@media (max-width: 380px) {
+  .view-tab { padding: 10px 8px; font-size: 10px; }
+  .stat-label { display: none; }
+  .mnav-crumb { max-width: 60px; }
+  .modal-name { font-size: 18px; }
+  .filter-btn { font-size: 11px; padding: 4px 8px; }
+}
+
+/* ── Landscape mobile ── */
+@media (max-width: 768px) and (orientation: landscape) {
+  header { display: none; }
+  #statsBar { display: none; }
+  #treeView.visible { height: calc(100vh - 44px); }
+  .modal { max-height: 96vh; }
+  .modal-header { padding: 10px 16px; }
+  .modal-body { padding: 10px 16px 16px; }
+}
+
 
 
 
@@ -1110,6 +1246,57 @@ var supabase=function(e){function t(e,t){var r={};for(var s in e)Object.prototyp
 <div id="dbStatus">⬤ verbinden…</div>
 <div id="configNotice">⚠️ <strong>Supabase niet geconfigureerd.</strong> Wijzigingen worden lokaal opgeslagen. Zie README voor setup.</div>
 
+<!-- ── Person Editor ── -->
+<div id="personEditorOverlay">
+  <div id="personEditor">
+    <div id="pePersonHeader">
+      <div>
+        <div id="pePersonTitle">Kind toevoegen</div>
+        <div id="pePersonSubtitle"></div>
+      </div>
+      <button class="pe-btn pe-btn-secondary" onclick="closePersonEditor()">✕</button>
+    </div>
+    <div id="pePersonBody">
+      <div class="pe-row">
+        <div class="pe-field">
+          <label>Voornaam *</label>
+          <input id="ppFirstName" type="text" placeholder="Voornaam" autocomplete="off">
+        </div>
+        <div class="pe-field">
+          <label>Achternaam *</label>
+          <input id="ppLastName" type="text" placeholder="Achternaam" autocomplete="off">
+        </div>
+      </div>
+      <div class="pe-field">
+        <label>Roepnaam / Bijnaam</label>
+        <input id="ppNickname" type="text" placeholder="optioneel" autocomplete="off">
+      </div>
+      <div class="pe-row">
+        <div class="pe-field">
+          <label>Geboortedatum</label>
+          <input id="ppBorn" type="text" placeholder="dd-mm-jjjj" autocomplete="off">
+        </div>
+        <div class="pe-field">
+          <label>Geboorteplaats</label>
+          <input id="ppBornPlace" type="text" placeholder="Plaats" autocomplete="off">
+        </div>
+      </div>
+      <div class="pe-field">
+        <label>Beroep</label>
+        <input id="ppProfession" type="text" placeholder="optioneel" autocomplete="off">
+      </div>
+      <div class="pe-field">
+        <label>Aantekening</label>
+        <input id="ppNote" type="text" placeholder="optioneel" autocomplete="off">
+      </div>
+    </div>
+    <div id="pePersonActions">
+      <button class="pe-btn pe-btn-secondary" onclick="closePersonEditor()">Annuleren</button>
+      <button class="pe-btn pe-btn-primary" onclick="saveNewPerson()">&#43; Opslaan</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ═══════════════════════════════════════════════
 //  FAMILY DATA  — extracted from Stamboek Hogenes
@@ -1158,6 +1345,7 @@ async function loadOverrides() {
   initSupabase(); // safe to call here — DOM + scripts all loaded
   if (!dbConfigured) {
     try { const s = localStorage.getItem('hogenes_photos'); if (s) customPortraits = JSON.parse(s); } catch(e) {}
+    try { const s2 = localStorage.getItem('hogenes_people'); if (s2) { customPeople = JSON.parse(s2); rebuildIndex(); } } catch(e) {}
     const isConfigured = !!(SUPABASE_URL && SUPABASE_ANON_KEY);
     if (!isConfigured) document.getElementById('configNotice').style.display = 'block';
     setDbStatus('', isConfigured ? 'verbinding mislukt' : 'lokaal');
@@ -1169,11 +1357,14 @@ async function loadOverrides() {
     if (error) throw error;
     customPortraits = {};
     (data || []).forEach(r => { customPortraits[r.person_id] = r.data; });
+    // Also load custom people
+    await loadCustomPeople();
     setDbStatus('ok', 'verbonden');
   } catch(e) {
     setDbStatus('error', 'geen verbinding');
     console.warn('Supabase load:', e.message);
     try { const s = localStorage.getItem('hogenes_photos'); if (s) customPortraits = JSON.parse(s); } catch(_) {}
+    try { const s2 = localStorage.getItem('hogenes_people'); if (s2) { customPeople = JSON.parse(s2); rebuildIndex(); } } catch(_) {}
   }
 }
 
@@ -1765,6 +1956,24 @@ const PORTRAITS = {"VII.1":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2
 const BY_ID = {};
 PEOPLE.forEach(p => BY_ID[p.id] = p);
 
+// ── Custom people (added via the editor) ──
+let customPeople = []; // array of person objects (same shape as PEOPLE)
+
+function rebuildIndex() {
+  // Merge customPeople into BY_ID and PARENT_OF
+  customPeople.forEach(p => {
+    BY_ID[p.id] = p;
+    if (!PEOPLE.find(pp => pp.id === p.id)) {
+      // Ensure parent has this child in its children array
+      const parent = BY_ID[p.parentId];
+      if (parent && !parent.children.includes(p.id)) {
+        parent.children.push(p.id);
+      }
+      PARENT_OF[p.id] = p.parentId;
+    }
+  });
+}
+
 // ═══════════════════════════════════════════════
 //  RENDER
 // ═══════════════════════════════════════════════
@@ -1914,6 +2123,27 @@ function openModal(id, addToHistory = true) {
   // ── Header ──
   document.getElementById('mGenBadge').textContent = `Generatie ${toRoman(p.gen)} · ${p.code}`;
   document.getElementById('mName').textContent = `${p.firstName} ${p.lastName}`;
+  // Custom person indicator + delete button
+  let existingCustomEl = document.getElementById('mCustomBadge');
+  if (existingCustomEl) existingCustomEl.remove();
+  if (p.isCustom) {
+    const badgeWrap = document.createElement('div');
+    badgeWrap.id = 'mCustomBadge';
+    badgeWrap.style.cssText = 'display:flex;align-items:center;gap:8px;margin-top:4px;';
+    badgeWrap.innerHTML = '<span class="custom-badge">Toegevoegd</span>';
+    const delBtn = document.createElement('button');
+    delBtn.className = 'delete-person-btn';
+    delBtn.innerHTML = '🗑 Verwijderen';
+    delBtn.onclick = async () => {
+      if (!confirm(`${p.firstName} ${p.lastName} verwijderen?`)) return;
+      closeModal();
+      await deleteCustomPerson(p.id);
+      if (treeReady) { treeReady = false; computeTreeLayout(); treeReady = true; drawTree(); }
+      render();
+    };
+    badgeWrap.appendChild(delBtn);
+    document.getElementById('mNick').after(badgeWrap);
+  }
   document.getElementById('mNick').textContent = p.nickname ? `"${p.nickname}"` : '';
   document.getElementById('mNick').style.display = p.nickname ? 'block' : 'none';
 
@@ -1998,6 +2228,15 @@ function openModal(id, addToHistory = true) {
       </li>`;
     });
     html += `</ul></div>`;
+    // Add child button (only for Gen X+ and when in edit mode)
+    if (p.gen >= 10) {
+      html += `<button class="add-child-btn" onclick="openPersonEditor('${p.id}')">&#43; Kind toevoegen aan ${p.firstName} ${p.lastName}</button>`;
+    }
+  } else if (p.gen >= 10) {
+    // No children yet but still allow adding
+    html += `<div class="detail-section">`;
+    html += `<button class="add-child-btn" onclick="openPersonEditor('${p.id}')">&#43; Kind toevoegen aan ${p.firstName} ${p.lastName}</button>`;
+    html += `</div>`;
   }
 
   // Note
@@ -2169,6 +2408,129 @@ document.addEventListener('keydown', e => {
     if (navPos < navHistory.length - 1) { navPos++; openModal(navHistory[navPos], false); }
   }
 });
+
+
+// ══════════════════════════════════════════════════════════════
+//  CUSTOM PEOPLE
+// ══════════════════════════════════════════════════════════════
+async function loadCustomPeople() {
+  if (!dbConfigured) return;
+  try {
+    const { data, error } = await _db.from('custom_people').select('*');
+    if (error) throw error;
+    customPeople = (data || []).map(r => JSON.parse(r.data));
+    customPeople.forEach(p => {
+      localStorage.setItem('hogenes_people', JSON.stringify(customPeople));
+    });
+    rebuildIndex();
+  } catch(e) {
+    console.warn('loadCustomPeople:', e.message);
+    try { const s = localStorage.getItem('hogenes_people'); if (s) { customPeople = JSON.parse(s); rebuildIndex(); } } catch(_) {}
+  }
+}
+
+async function upsertCustomPerson(person) {
+  // Update localStorage
+  const existing = customPeople.findIndex(p => p.id === person.id);
+  if (existing >= 0) customPeople[existing] = person;
+  else customPeople.push(person);
+  try { localStorage.setItem('hogenes_people', JSON.stringify(customPeople)); } catch(e) {}
+  rebuildIndex();
+
+  if (!dbConfigured) return;
+  setDbStatus('syncing', 'opslaan…');
+  try {
+    const { error } = await _db.from('custom_people').upsert(
+      { person_id: person.id, data: JSON.stringify(person), updated_at: new Date().toISOString() },
+      { onConflict: 'person_id' }
+    );
+    if (error) throw error;
+    setDbStatus('ok', 'opgeslagen ✓');
+  } catch(e) {
+    setDbStatus('error', 'opslaan mislukt');
+    console.warn('upsertCustomPerson:', e.message);
+  }
+}
+
+async function deleteCustomPerson(personId) {
+  customPeople = customPeople.filter(p => p.id !== personId);
+  // Remove from parent's children
+  const parent = Object.values(BY_ID).find(p => p.children && p.children.includes(personId));
+  if (parent) parent.children = parent.children.filter(c => c !== personId);
+  delete BY_ID[personId];
+  delete PARENT_OF[personId];
+  try { localStorage.setItem('hogenes_people', JSON.stringify(customPeople)); } catch(e) {}
+
+  if (!dbConfigured) return;
+  setDbStatus('syncing', 'verwijderen…');
+  try {
+    const { error } = await _db.from('custom_people').delete().eq('person_id', personId);
+    if (error) throw error;
+    setDbStatus('ok', 'verwijderd ✓');
+  } catch(e) {
+    setDbStatus('error', 'verwijderen mislukt');
+    console.warn('deleteCustomPerson:', e.message);
+  }
+}
+
+let pePersonParentId = null;
+
+function openPersonEditor(parentId) {
+  pePersonParentId = parentId;
+  const parent = BY_ID[parentId];
+  document.getElementById('pePersonTitle').textContent = 'Kind toevoegen';
+  document.getElementById('pePersonSubtitle').textContent =
+    parent ? `Ouder: ${parent.firstName} ${parent.lastName} (${parentId})` : parentId;
+  // Clear fields
+  ['ppFirstName','ppLastName','ppNickname','ppBorn','ppBornPlace','ppProfession','ppNote']
+    .forEach(id => { document.getElementById(id).value = ''; });
+  document.getElementById('personEditorOverlay').classList.add('open');
+  setTimeout(() => document.getElementById('ppFirstName').focus(), 50);
+}
+
+function closePersonEditor() {
+  document.getElementById('personEditorOverlay').classList.remove('open');
+  pePersonParentId = null;
+}
+
+async function saveNewPerson() {
+  const firstName = document.getElementById('ppFirstName').value.trim();
+  const lastName  = document.getElementById('ppLastName').value.trim();
+  if (!firstName || !lastName) {
+    document.getElementById('ppFirstName').focus();
+    document.getElementById('ppFirstName').style.borderColor = '#f08060';
+    setTimeout(() => document.getElementById('ppFirstName').style.borderColor = '', 1500);
+    return;
+  }
+  const parent = BY_ID[pePersonParentId];
+  const newGen  = parent ? parent.gen + 1 : 12;
+  const newCode = pePersonParentId + '_' + Date.now().toString(36).slice(-4).toUpperCase();
+  const person = {
+    id:         newCode,
+    gen:        newGen,
+    code:       newCode,
+    lastName:   lastName,
+    firstName:  firstName,
+    nickname:   document.getElementById('ppNickname').value.trim() || null,
+    born:       document.getElementById('ppBorn').value.trim() || null,
+    bornPlace:  document.getElementById('ppBornPlace').value.trim() || null,
+    died:       null, diedPlace: null,
+    profession: document.getElementById('ppProfession').value.trim() || null,
+    spouse:     null,
+    children:   [],
+    note:       document.getElementById('ppNote').value.trim() || null,
+    parentId:   pePersonParentId,
+    isCustom:   true
+  };
+
+  closePersonEditor();
+  await upsertCustomPerson(person);
+
+  // Re-open parent modal and refresh tree
+  if (treeReady) { treeReady = false; computeTreeLayout(); treeReady = true; drawTree(); }
+  if (navHistory.length > 0 && navPos >= 0) openModal(navHistory[navPos], false);
+  render();
+}
 
 // ── Init ──
 document.getElementById('totalCount').textContent = PEOPLE.length;
