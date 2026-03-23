@@ -1117,8 +1117,6 @@ var supabase=function(e){function t(e,t){var r={};for(var s in e)Object.prototyp
 <div class="view-tabs">
   <button class="view-tab active" id="tabCards" onclick="switchView('cards')">⊞ Persoonskaarten</button>
   <button class="view-tab" id="tabTree" onclick="switchView('tree')">⎇ Stamboom</button>
-  <div style="flex:1"></div>
-  <button class="view-tab" id="editModeBtn" onclick="toggleEditMode()" title="Beheermodus">🔒 Beheren</button>
 </div>
 
 <div id="cardControls">
@@ -1198,7 +1196,7 @@ var supabase=function(e){function t(e,t){var r={};for(var s in e)Object.prototyp
 </div>
 
 <!-- ── PHOTO EDITOR ── -->
-<div id="photoEditorOverlay">
+<div id="photoEditorOverlay" style="display:none">
   <div id="photoEditor">
     <div id="peHeader">
       <div>
@@ -1230,24 +1228,10 @@ var supabase=function(e){function t(e,t){var r={};for(var s in e)Object.prototyp
 </div>
 
 
-<!-- PIN dialog -->
-<div id="pinOverlay">
-  <div id="pinBox">
-    <h3>🔐 Beheermodus</h3>
-    <p>Voer de pincode in om foto's te bewerken</p>
-    <input id="pinInput" type="password" maxlength="8" placeholder="••••" autocomplete="off">
-    <div id="pinError"></div>
-    <div class="pin-row">
-      <button class="pe-btn pe-btn-secondary" onclick="closePinDialog()">Annuleren</button>
-      <button class="pe-btn pe-btn-primary" onclick="submitPin()">Ontgrendelen</button>
-    </div>
-  </div>
-</div>
-<div id="dbStatus">⬤ verbinden…</div>
-<div id="configNotice">⚠️ <strong>Supabase niet geconfigureerd.</strong> Wijzigingen worden lokaal opgeslagen. Zie README voor setup.</div>
+<div id="dbStatus" style="display:none">⬤ verbinden…</div>
 
 <!-- ── Person Editor ── -->
-<div id="personEditorOverlay">
+<div id="personEditorOverlay" style="display:none">
   <div id="personEditor">
     <div id="pePersonHeader">
       <div>
@@ -1336,6 +1320,8 @@ let customPortraits = {};
 function setDbStatus(state, msg) {
   const el = document.getElementById('dbStatus');
   if (!el) return;
+  if (!editMode) return; // only show in edit mode
+  el.style.display = 'block';
   el.className = state;
   const icons = { ok:'⬤', error:'⬤', syncing:'↻', '':'⬤' };
   el.textContent = (icons[state]||'⬤') + ' ' + msg;
@@ -1346,9 +1332,7 @@ async function loadOverrides() {
   if (!dbConfigured) {
     try { const s = localStorage.getItem('hogenes_photos'); if (s) customPortraits = JSON.parse(s); } catch(e) {}
     try { const s2 = localStorage.getItem('hogenes_people'); if (s2) { customPeople = JSON.parse(s2); rebuildIndex(); } } catch(e) {}
-    const isConfigured = !!(SUPABASE_URL && SUPABASE_ANON_KEY);
-    if (!isConfigured) document.getElementById('configNotice').style.display = 'block';
-    setDbStatus('', isConfigured ? 'verbinding mislukt' : 'lokaal');
+    setDbStatus('', '');
     return;
   }
   setDbStatus('syncing', 'laden…');
@@ -1416,39 +1400,16 @@ function getPortrait(id) {
 
 // ── Edit mode & PIN ──
 function toggleEditMode() {
+  // Edit mode is now managed via /beheer page + sessionStorage
   if (editMode) {
     editMode = false;
     document.body.classList.remove('edit-mode');
-    document.getElementById('editModeBtn').textContent = '🔒 Beheren';
-    document.getElementById('editModeBtn').classList.remove('active');
-  } else {
-    openPinDialog();
+    sessionStorage.removeItem('hogenes_edit');
   }
 }
-function openPinDialog() {
-  document.getElementById('pinInput').value = '';
-  document.getElementById('pinError').textContent = '';
-  document.getElementById('pinOverlay').classList.add('open');
-  setTimeout(() => document.getElementById('pinInput').focus(), 50);
-}
-function closePinDialog() {
-  document.getElementById('pinOverlay').classList.remove('open');
-}
-function submitPin() {
-  const v = document.getElementById('pinInput').value;
-  if (v === EDIT_PIN) {
-    closePinDialog();
-    editMode = true;
-    document.body.classList.add('edit-mode');
-    document.getElementById('editModeBtn').textContent = '🔓 Beheren';
-    document.getElementById('editModeBtn').classList.add('active');
-    if (navHistory.length > 0 && navPos >= 0) openModal(navHistory[navPos], false);
-  } else {
-    document.getElementById('pinError').textContent = 'Onjuiste pincode';
-    document.getElementById('pinInput').value = '';
-    document.getElementById('pinInput').focus();
-  }
-}
+function openPinDialog() { window.location.href = 'beheer.html'; }
+function closePinDialog() {}
+function submitPin() { /* handled in beheer.html */ }
 
 function hasCustomPortrait(id) {
   return !!customPortraits[id];
@@ -2535,9 +2496,25 @@ async function saveNewPerson() {
 // ── Init ──
 document.getElementById('totalCount').textContent = PEOPLE.length;
 buildLegend();
-loadOverrides().then(() => render());
-document.getElementById('pinInput').addEventListener('keydown', e => { if (e.key === 'Enter') submitPin(); });
-document.getElementById('pinOverlay').addEventListener('click', e => { if (e.target === document.getElementById('pinOverlay')) closePinDialog(); });
+
+// Activate edit mode if opened from beheer.html (shared sessionStorage flag)
+if (sessionStorage.getItem('hogenes_edit') === '1') {
+  editMode = true;
+  document.body.classList.add('edit-mode');
+  document.getElementById('dbStatus').style.display = 'block';
+}
+
+loadOverrides().then(() => {
+  render();
+  // Show db status indicator only in edit mode
+  if (editMode) {
+    setTimeout(() => {
+      const el = document.getElementById('dbStatus');
+      if (el) el.style.display = 'block';
+    }, 500);
+  }
+});
+
 
 // ══════════════════════════════════════════════════════
 //  VIEW SWITCHER

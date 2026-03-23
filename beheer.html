@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Beheer — Stamboek Familie Hogenes</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink:       #1a1208;
+    --parchment: #f7f0e3;
+    --gold:      #c8973a;
+    --gold-light:#e8c470;
+    --sepia:     #6b4a1a;
+    --cream:     #faf4ea;
+    --border:    #e0d4bc;
+    --rust:      #8b3a1a;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    height: 100%;
+    background: var(--ink);
+    font-family: 'Source Serif 4', serif;
+    color: var(--parchment);
+  }
+
+  .page {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background:
+      radial-gradient(ellipse at 20% 50%, rgba(139,58,26,0.12) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 30%, rgba(200,151,58,0.08) 0%, transparent 50%),
+      var(--ink);
+  }
+
+  .ornament {
+    font-size: 11px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 12px;
+    opacity: 0.7;
+  }
+
+  h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(24px, 5vw, 34px);
+    font-weight: 700;
+    color: var(--parchment);
+    margin-bottom: 4px;
+    text-align: center;
+  }
+
+  .subtitle {
+    font-size: 13px;
+    color: #786040;
+    margin-bottom: 40px;
+    text-align: center;
+  }
+
+  .card {
+    background: #231a0c;
+    border: 1px solid rgba(200,151,58,0.25);
+    border-radius: 14px;
+    padding: 36px 40px 32px;
+    width: min(380px, 100%);
+    box-shadow: 0 24px 64px rgba(0,0,0,0.5);
+  }
+
+  .card-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    color: var(--parchment);
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .card-desc {
+    font-size: 13px;
+    color: #786040;
+    margin-bottom: 28px;
+    line-height: 1.5;
+  }
+
+  .pin-dots {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-bottom: 8px;
+  }
+
+  .pin-dot {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    border: 2px solid rgba(200,151,58,0.35);
+    background: transparent;
+    transition: all 0.15s;
+  }
+  .pin-dot.filled {
+    background: var(--gold);
+    border-color: var(--gold);
+    box-shadow: 0 0 8px rgba(200,151,58,0.5);
+  }
+
+  .pin-input-wrap { position: relative; }
+  #pinInput {
+    width: 100%;
+    padding: 12px 16px;
+    font-size: 22px;
+    letter-spacing: 10px;
+    text-align: center;
+    background: #0e0b06;
+    border: 1.5px solid rgba(200,151,58,0.25);
+    border-radius: 8px;
+    color: var(--parchment);
+    font-family: monospace;
+    outline: none;
+    margin-bottom: 10px;
+    transition: border-color 0.15s;
+    -webkit-text-security: disc;
+  }
+  #pinInput:focus { border-color: var(--gold); }
+  #pinInput.error { border-color: #f08060; animation: shake 0.3s ease; }
+
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    25%      { transform: translateX(-6px); }
+    75%      { transform: translateX(6px); }
+  }
+
+  #pinError {
+    color: #f08060;
+    font-size: 13px;
+    min-height: 20px;
+    text-align: center;
+    margin-bottom: 16px;
+  }
+
+  .btn-row { display: flex; gap: 10px; }
+
+  .btn {
+    flex: 1;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-family: 'Source Serif 4', serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s;
+  }
+  .btn-primary {
+    background: var(--gold);
+    color: var(--ink);
+  }
+  .btn-primary:hover { background: var(--gold-light); }
+  .btn-primary:active { transform: scale(0.98); }
+  .btn-secondary {
+    background: rgba(247,240,227,0.07);
+    color: #9a8060;
+    border: 1px solid rgba(247,240,227,0.12);
+  }
+  .btn-secondary:hover { background: rgba(247,240,227,0.12); color: var(--parchment); }
+
+  .back-link {
+    margin-top: 28px;
+    font-size: 12px;
+    color: #5a4020;
+    text-decoration: none;
+    letter-spacing: 0.5px;
+    transition: color 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .back-link:hover { color: #786040; }
+
+  /* Success state */
+  .success-box {
+    display: none;
+    text-align: center;
+    padding: 8px 0 4px;
+  }
+  .success-icon { font-size: 36px; margin-bottom: 12px; }
+  .success-msg {
+    font-family: 'Playfair Display', serif;
+    font-size: 18px;
+    color: var(--parchment);
+    margin-bottom: 6px;
+  }
+  .success-sub { font-size: 13px; color: #786040; margin-bottom: 20px; }
+</style>
+</head>
+<body>
+
+<div class="page">
+  <div class="ornament">◆ Stamboek Familie Hogenes ◆</div>
+  <h1>Beheerpagina</h1>
+  <p class="subtitle">Foto's en personen beheren</p>
+
+  <div class="card">
+    <!-- Login form -->
+    <div id="loginForm">
+      <div class="card-title">🔐 Pincode</div>
+      <p class="card-desc">Voer de beheerderscode in om foto's te kunnen uploaden, bewerken en verwijderen.</p>
+
+      <div class="pin-dots" id="pinDots">
+        <div class="pin-dot" id="dot0"></div>
+        <div class="pin-dot" id="dot1"></div>
+        <div class="pin-dot" id="dot2"></div>
+        <div class="pin-dot" id="dot3"></div>
+        <div class="pin-dot" id="dot4"></div>
+        <div class="pin-dot" id="dot5"></div>
+        <div class="pin-dot" id="dot6"></div>
+        <div class="pin-dot" id="dot7"></div>
+      </div>
+
+      <div class="pin-input-wrap">
+        <input id="pinInput" type="password" maxlength="8"
+               autocomplete="off" autocorrect="off" spellcheck="false"
+               placeholder="" inputmode="numeric">
+      </div>
+      <div id="pinError"></div>
+
+      <div class="btn-row">
+        <a class="btn btn-secondary" href="index.html">← Terug</a>
+        <button class="btn btn-primary" onclick="submitPin()">Ontgrendelen</button>
+      </div>
+    </div>
+
+    <!-- Success state -->
+    <div class="success-box" id="successBox">
+      <div class="success-icon">🔓</div>
+      <div class="success-msg">Toegang verleend</div>
+      <p class="success-sub">Je wordt doorgestuurd naar het stamboek…</p>
+      <button class="btn btn-primary" onclick="goToStamboek()">Ga naar stamboek →</button>
+    </div>
+  </div>
+
+  <a class="back-link" href="index.html">← Terug naar het stamboek</a>
+</div>
+
+<script>
+// ── Config ────────────────────────────────────────────────
+// These are injected at build time by inject_config.js
+// For local testing, hardcode here:
+const EDIT_PIN = typeof _EDIT_PIN !== 'undefined' ? _EDIT_PIN : '1234';
+// ──────────────────────────────────────────────────────────
+
+const input = document.getElementById('pinInput');
+const dots  = document.querySelectorAll('.pin-dot');
+
+// Update dot indicators as user types
+input.addEventListener('input', () => {
+  const len = input.value.length;
+  dots.forEach((d, i) => d.classList.toggle('filled', i < len));
+  document.getElementById('pinError').textContent = '';
+  input.classList.remove('error');
+});
+
+input.addEventListener('keydown', e => {
+  if (e.key === 'Enter') submitPin();
+});
+
+function submitPin() {
+  const entered = input.value;
+  if (entered === EDIT_PIN) {
+    // Store edit session
+    sessionStorage.setItem('hogenes_edit', '1');
+    // Show success
+    document.getElementById('loginForm').style.display = 'none';
+    document.getElementById('successBox').style.display = 'block';
+    // Auto-redirect after 1.2s
+    setTimeout(goToStamboek, 1200);
+  } else {
+    input.classList.add('error');
+    document.getElementById('pinError').textContent = 'Onjuiste pincode — probeer opnieuw';
+    input.value = '';
+    dots.forEach(d => d.classList.remove('filled'));
+    setTimeout(() => input.focus(), 50);
+  }
+}
+
+function goToStamboek() {
+  window.location.href = 'index.html';
+}
+
+// Focus input on load
+window.addEventListener('load', () => input.focus());
+
+// If already authenticated, show that
+if (sessionStorage.getItem('hogenes_edit') === '1') {
+  document.getElementById('loginForm').style.display = 'none';
+  document.getElementById('successBox').style.display = 'block';
+  document.querySelector('.success-sub').textContent = 'Je bent al ingelogd als beheerder.';
+}
+</script>
+</body>
+</html>
