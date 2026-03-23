@@ -1,0 +1,15 @@
+[build]
+  publish = "."
+
+# Inject Supabase credentials as JS variables at build time
+# Set these in: Netlify dashboard → Site settings → Environment variables
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+
+# Optional: redirect /famile to root
+[[redirects]]
+  from = "/familie"
+  to = "/"
+  status = 200
