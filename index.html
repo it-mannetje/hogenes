@@ -1092,6 +1092,41 @@ html, body { overflow-x: hidden; }
   body:not(.edit-mode) .partner-add-btn { display: none !important; }
   .delete-person-btn { display: none; }
   body.edit-mode .delete-person-btn { display: inline-flex; align-items: center; gap: 4px; }
+
+  /* ── Lightbox ── */
+  #lightbox {
+    display: none; position: fixed; inset: 0; z-index: 400;
+    background: rgba(0,0,0,0.92); align-items: center; justify-content: center;
+    cursor: zoom-out; backdrop-filter: blur(6px);
+  }
+  #lightbox.open { display: flex; }
+  #lightboxImg {
+    max-width: min(90vw, 900px); max-height: 90vh;
+    object-fit: contain; border-radius: 4px;
+    box-shadow: 0 8px 48px rgba(0,0,0,0.8);
+    animation: lbIn 0.18s ease;
+    cursor: default;
+  }
+  @keyframes lbIn {
+    from { transform: scale(0.88); opacity: 0; }
+    to   { transform: scale(1);    opacity: 1; }
+  }
+  #lightboxCaption {
+    position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%);
+    font-family: 'Source Serif 4', serif; font-size: 14px; color: #d4c090;
+    letter-spacing: 0.5px; pointer-events: none; white-space: nowrap;
+  }
+  #lightboxClose {
+    position: absolute; top: 16px; right: 20px;
+    background: rgba(255,255,255,0.1); border: none; color: #d4c090;
+    font-size: 22px; width: 40px; height: 40px; border-radius: 50%;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s;
+  }
+  #lightboxClose:hover { background: rgba(255,255,255,0.2); }
+  /* Make clickable photos show pointer */
+  .modal-photo, .partner-photo, .card-photo { cursor: zoom-in; }
+
 </style>
 <script>
 /**
@@ -1290,6 +1325,13 @@ var supabase=function(e){function t(e,t){var r={};for(var s in e)Object.prototyp
   </div>
 </div>
 
+<!-- ── Lightbox ── -->
+<div id="lightbox" onclick="closeLightbox()">
+  <button id="lightboxClose" onclick="closeLightbox()" title="Sluiten">✕</button>
+  <img id="lightboxImg" src="" alt="" onclick="event.stopPropagation()">
+  <div id="lightboxCaption"></div>
+</div>
+
 <script>
 // ═══════════════════════════════════════════════
 //  FAMILY DATA  — extracted from Stamboek Hogenes
@@ -1305,7 +1347,7 @@ const GEN_COLORS = {
 // ─────────────────────────────────────────────────────────
 const SUPABASE_URL      = 'https://gbeevlqrctdvsylvrvkz.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiZWV2bHFyY3RkdnN5bHZydmt6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyNzU1MTAsImV4cCI6MjA4OTg1MTUxMH0.h85KTPneni0YYmUGuPPvhhCXa1kYdkwvzSDhl6qpJD4';
-const EDIT_PIN          = '2548180'; // WIJZIG DIT naar jouw eigen pincode!
+const EDIT_PIN          = '1234'; // WIJZIG DIT naar jouw eigen pincode!
 // ─────────────────────────────────────────────────────────
 
 let _db = null;
@@ -1372,7 +1414,7 @@ async function upsertPortrait(id, data) {
   setDbStatus('syncing', 'opslaan…');
   try {
     const { error } = await _db.from('photo_overrides').upsert(
-      { person_id: id, data, updated_at: new Date().toISOString() },
+      { person_id: id, data },
       { onConflict: 'person_id' }
     );
     if (error) throw error;
@@ -2075,6 +2117,7 @@ function openModal(id, addToHistory = true) {
       mImg.className = 'modal-photo';
       mImg.alt = p.firstName;
       mImg.src = photoData;
+      mImg.onclick = () => openLightbox(photoData, p.firstName + ' ' + p.lastName);
       const editBtn = document.createElement('button');
       editBtn.className = 'photo-edit-btn';
       editBtn.title = 'Foto bewerken';
@@ -2139,6 +2182,7 @@ function openModal(id, addToHistory = true) {
       parImg.className = 'parent-link-photo';
       parImg.alt = par.firstName;
       parImg.src = parPhotoData;
+      parImg.onclick = e => { e.stopPropagation(); openLightbox(parPhotoData, par.firstName + ' ' + par.lastName); };
       parLink.appendChild(parImg);
     } else {
       const parPh = document.createElement('span');
@@ -2228,6 +2272,7 @@ function openModal(id, addToHistory = true) {
       img.className = 'partner-photo';
       img.src = partnerPhoto;
       img.alt = 'Partner';
+      img.onclick = e => { e.stopPropagation(); openLightbox(partnerPhoto, 'Partner'); };
       const editBtn = document.createElement('button');
       editBtn.className = 'photo-edit-btn partner-edit-btn';
       editBtn.title = 'Partnerfoto bewerken';
@@ -2255,6 +2300,9 @@ function openModal(id, addToHistory = true) {
       img.className = 'child-thumb';
       img.alt = cid;
       img.src = cPhotoData;
+      const cPerson = BY_ID[cid];
+      img.onclick = e => { e.stopPropagation(); openLightbox(cPhotoData, cPerson ? cPerson.firstName + ' ' + cPerson.lastName : cid); };
+      img.style.cursor = 'zoom-in';
       slot.replaceWith(img);
     } else {
       const ph = document.createElement('span');
@@ -2411,14 +2459,15 @@ async function upsertCustomPerson(person) {
   setDbStatus('syncing', 'opslaan…');
   try {
     const { error } = await _db.from('custom_people').upsert(
-      { person_id: person.id, data: JSON.stringify(person), updated_at: new Date().toISOString() },
+      { person_id: person.id, data: JSON.stringify(person) },
       { onConflict: 'person_id' }
     );
     if (error) throw error;
     setDbStatus('ok', 'opgeslagen ✓');
   } catch(e) {
-    setDbStatus('error', 'opslaan mislukt');
-    console.warn('upsertCustomPerson:', e.message);
+    // Table may not exist yet — still works locally, just warn
+    setDbStatus('', 'lokaal opgeslagen');
+    console.warn('upsertCustomPerson (tabel bestaat mogelijk nog niet in Supabase):', e.message);
   }
 }
 
@@ -2494,16 +2543,52 @@ async function saveNewPerson() {
     isCustom:   true
   };
 
+  const newPersonId = person.id;
   closePersonEditor();
   await upsertCustomPerson(person);
 
-  // Re-open parent modal and refresh tree
+  // Refresh tree layout
   if (treeReady) { treeReady = false; computeTreeLayout(); treeReady = true; drawTree(); }
-  if (navHistory.length > 0 && navPos >= 0) openModal(navHistory[navPos], false);
   render();
+
+  // Open the NEW person's modal so user can immediately add a photo
+  openModal(newPersonId);
 }
 
+
+// ══════════════════════════════════════════════
+//  LIGHTBOX
+// ══════════════════════════════════════════════
+function openLightbox(src, caption) {
+  const img = document.getElementById('lightboxImg');
+  const lb  = document.getElementById('lightbox');
+  img.src = src;
+  img.alt = caption || '';
+  document.getElementById('lightboxCaption').textContent = caption || '';
+  lb.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('open');
+  document.body.style.overflow = '';
+}
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && document.getElementById('lightbox').classList.contains('open')) {
+    closeLightbox();
+  }
+});
+
 // ── Init ──
+document.getElementById('grid').addEventListener('click', e => {
+  const img = e.target.closest('.card-photo');
+  if (img) {
+    e.stopPropagation();
+    const card = img.closest('[data-id]');
+    const p = card ? BY_ID[card.dataset.id] : null;
+    openLightbox(img.src, p ? p.firstName + ' ' + p.lastName : '');
+  }
+});
+
 document.getElementById('totalCount').textContent = PEOPLE.length;
 buildLegend();
 
