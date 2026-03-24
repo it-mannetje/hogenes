@@ -1083,6 +1083,15 @@ html, body { overflow-x: hidden; }
   }
   .partner-text .detail-label { display: block; }
   .partner-text .detail-value { font-size: 14px; color: var(--ink); line-height: 1.5; }
+
+  /* ── Edit mode visibility ── */
+  .add-child-btn { display: none; }
+  body.edit-mode .add-child-btn { display: block; }
+  body:not(.edit-mode) .photo-edit-btn,
+  body:not(.edit-mode) .photo-add-btn,
+  body:not(.edit-mode) .partner-add-btn { display: none !important; }
+  .delete-person-btn { display: none; }
+  body.edit-mode .delete-person-btn { display: inline-flex; align-items: center; gap: 4px; }
 </style>
 <script>
 /**
@@ -1296,7 +1305,7 @@ const GEN_COLORS = {
 // ─────────────────────────────────────────────────────────
 const SUPABASE_URL      = 'https://gbeevlqrctdvsylvrvkz.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiZWV2bHFyY3RkdnN5bHZydmt6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyNzU1MTAsImV4cCI6MjA4OTg1MTUxMH0.h85KTPneni0YYmUGuPPvhhCXa1kYdkwvzSDhl6qpJD4';
-const EDIT_PIN          = '1234'; // WIJZIG DIT naar jouw eigen pincode!
+const EDIT_PIN          = '2548180'; // WIJZIG DIT naar jouw eigen pincode!
 // ─────────────────────────────────────────────────────────
 
 let _db = null;
@@ -2445,12 +2454,13 @@ function openPersonEditor(parentId) {
   // Clear fields
   ['ppFirstName','ppLastName','ppNickname','ppBorn','ppBornPlace','ppProfession','ppNote']
     .forEach(id => { document.getElementById(id).value = ''; });
-  document.getElementById('personEditorOverlay').classList.add('open');
+  const peOvl = document.getElementById('personEditorOverlay');
+  peOvl.style.display = 'flex';
   setTimeout(() => document.getElementById('ppFirstName').focus(), 50);
 }
 
 function closePersonEditor() {
-  document.getElementById('personEditorOverlay').classList.remove('open');
+  document.getElementById('personEditorOverlay').style.display = 'none';
   pePersonParentId = null;
 }
 
@@ -2975,7 +2985,7 @@ function openPhotoEditor(id) {
   // Show remove btn if there's a photo (built-in or custom, and not already removed)
   const hasPhoto = !!(PORTRAITS[id] || (customPortraits[id] && customPortraits[id] !== '__removed__'));
   document.getElementById('peRemoveBtn').style.display = hasPhoto ? 'inline-flex' : 'none';
-  document.getElementById('photoEditorOverlay').classList.add('open');
+  document.getElementById('photoEditorOverlay').style.display = 'flex';
 
   peCanvas.onmousedown = peOnMouseDown;
   peCanvas.onmousemove = peOnMouseMove;
@@ -2987,7 +2997,7 @@ function openPhotoEditor(id) {
 }
 
 function closePhotoEditor() {
-  document.getElementById('photoEditorOverlay').classList.remove('open');
+  document.getElementById('photoEditorOverlay').style.display = 'none';
   peCurrentId = null; peSourceImage = null; peCropBox = null;
 }
 
