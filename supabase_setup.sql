@@ -1,34 +1,52 @@
 -- ═══════════════════════════════════════════════════
 --  Stamboek Hogenes — Supabase Setup
---  Run this in: Supabase dashboard → SQL Editor
+--  Run this ONCE in: Supabase dashboard → SQL Editor
 -- ═══════════════════════════════════════════════════
 
--- 1. Create the photo overrides table
+-- 1. Photo overrides table (custom/removed portraits)
 create table if not exists photo_overrides (
-  person_id   text primary key,           -- e.g. 'VII.1' or 'VII.1_partner'
-  data        text not null,              -- base64 data URL or '__removed__'
-  updated_at  timestamptz default now()
+  person_id   text primary key,
+  data        text not null
 );
 
--- 2. Enable Row Level Security
 alter table photo_overrides enable row level security;
 
--- 3. Allow anyone to READ (public family site)
 create policy "Public read"
-  on photo_overrides for select
-  using (true);
+  on photo_overrides for select using (true);
 
--- 4. Allow INSERT/UPDATE/DELETE with anon key
---    (the EDIT_PIN in the app provides the user-facing security)
 create policy "Anon write"
-  on photo_overrides for all
-  using (true)
-  with check (true);
+  on photo_overrides for all using (true) with check (true);
 
--- 5. Optional: index on updated_at for ordering
-create index if not exists photo_overrides_updated_at
-  on photo_overrides (updated_at desc);
+
+-- 2. Custom people table (newly added family members)
+create table if not exists custom_people (
+  person_id   text primary key,
+  data        text not null
+);
+
+alter table custom_people enable row level security;
+
+create policy "Public read custom_people"
+  on custom_people for select using (true);
+
+create policy "Anon write custom_people"
+  on custom_people for all using (true) with check (true);
 
 -- ═══════════════════════════════════════════════════
--- Done! Your table is ready.
+-- Done! Both tables are ready.
 -- ═══════════════════════════════════════════════════
+
+
+-- 3. Person edits table (overrides for existing family member details)
+create table if not exists person_edits (
+  person_id   text primary key,
+  data        text not null
+);
+
+alter table person_edits enable row level security;
+
+create policy "Public read person_edits"
+  on person_edits for select using (true);
+
+create policy "Anon write person_edits"
+  on person_edits for all using (true) with check (true);
