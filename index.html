@@ -654,7 +654,6 @@ html, body { overflow-x: hidden; }
   .partner-add-btn { width: 58px; height: 72px; }
 
   /* Tree view */
-  #treeView.visible { height: calc(100vh - 80px); }
   #treeSearch { top: 10px; left: 10px; }
   #treeSearchInput { width: 160px; font-size: 13px; }
   #treeControls { top: 10px; right: 10px; gap: 5px; }
@@ -717,7 +716,6 @@ html, body { overflow-x: hidden; }
 @media (max-width: 768px) and (orientation: landscape) {
   header { display: none; }
   #statsBar { display: none; }
-  #treeView.visible { height: calc(100vh - 44px); }
   .modal { max-height: 96vh; }
   .modal-header { padding: 10px 16px; }
   .modal-body { padding: 10px 16px 16px; }
@@ -776,54 +774,65 @@ html, body { overflow-x: hidden; }
   .view-tab:hover { color: var(--parchment); }
   .view-tab.active { color: var(--gold-light); border-bottom-color: var(--gold); }
 
-  /* ── Tree view ── */
-  #treeView { transition: background 0.3s; }
+  /* ── Tr  /* #treeView styles moved to toolbar section */
+  #treeView.visible { display: flex; }
+  #cardView.hidden { display: none; }
+  /* ── Tree toolbar (in normal flow, never overlaps) ── */
+  #treeView {
     display: none;
     flex-direction: column;
-    height: calc(100vh - 220px);
-    min-height: 500px;
-    position: relative;
-    background: #110e07;
     overflow: hidden;
   }
   #treeView.visible { display: flex; }
-  #cardView.hidden { display: none; }
-  #treeControls {
-    position: absolute;
-    top: 10px;
-    right: 10px;
+  #treeToolbar {
     display: flex;
-    flex-direction: column;
-    gap: 5px;
-    z-index: 10;
-    align-items: flex-end;
-  }
-  .tree-ctrl-row {
-    display: flex;
-    gap: 5px;
+    flex-wrap: wrap;
     align-items: center;
+    gap: 5px;
+    padding: 7px 10px;
+    background: var(--ink);
+    border-bottom: 1px solid rgba(200,151,58,0.15);
+    flex-shrink: 0;
   }
+  #treeNavBtns, #treeThemeBtns {
+    display: flex;
+    gap: 4px;
+    flex-wrap: nowrap;
+  }
+  #treeThemeBtns { margin-left: auto; }
+  #treeSvgWrap {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    min-height: 0;
+    background: #1a1208;
+    transition: background 0.3s;
+  }
+  #treeView.theme-light   #treeSvgWrap { background: #f0e8d4; }
+  #treeView.theme-minimal #treeSvgWrap { background: #f5f0e8; }
   .tree-btn {
-    background: rgba(26,18,8,0.82);
-    border: 1px solid rgba(200,151,58,0.35);
-    border-radius: 6px;
+    background: rgba(26,18,8,0.75);
+    border: 1px solid rgba(200,151,58,0.3);
+    border-radius: 5px;
     color: rgba(200,151,58,0.85);
     font-family: 'Source Serif 4', serif;
-    font-size: 13px;
+    font-size: 12px;
     cursor: pointer;
-    height: 30px;
-    padding: 0 10px;
-    display: flex;
+    height: 28px;
+    padding: 0 8px;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
     transition: all 0.12s;
     white-space: nowrap;
-    backdrop-filter: blur(4px);
   }
-  .tree-btn:hover { background: rgba(200,151,58,0.25); color: var(--gold-light); }
-  .tree-btn.wide { min-width: 70px; }
-  .tree-theme-btn { font-size: 12px; gap: 4px; }
-  .tree-theme-btn.active { background: rgba(200,151,58,0.3) !important; color: var(--gold-light) !important; border-color: var(--gold); }
+  .tree-btn:hover { background: rgba(200,151,58,0.22); color: var(--gold-light); }
+  .tree-btn.wide { min-width: 60px; }
+  .tree-theme-btn.active {
+    background: rgba(200,151,58,0.28) !important;
+    color: var(--gold-light) !important;
+    border-color: var(--gold);
+  }
 
   #treeHint {
     position: absolute;
@@ -836,12 +845,7 @@ html, body { overflow-x: hidden; }
     letter-spacing: 1px;
     white-space: nowrap;
   }
-  #treeSearch {
-    position: absolute;
-    top: 14px;
-    left: 18px;
-    z-index: 10;
-  }
+  #treeSearch { position: relative; }
   #treeSearchInput {
     background: rgba(247,240,227,0.1);
     border: 1px solid rgba(247,240,227,0.2);
@@ -1130,9 +1134,6 @@ html, body { overflow-x: hidden; }
   /* ── Tree themes ── */
   .tree-theme-btn { font-size:15px !important; }
   .tree-theme-btn.active { background:rgba(200,151,58,0.35) !important; color:#e8c470 !important; }
-  #treeView { transition: background   #treeView { transition:background 0.3s; }
-  #treeView.theme-light   { background:#f0e8d4; }
-  #treeView.theme-minimal { background:#f5f0e8; }
 
 </style>
 <script>
@@ -1191,26 +1192,28 @@ var supabase=function(e){function t(e,t){var r={};for(var s in e)Object.prototyp
 
 <!-- ── TREE VIEW ── -->
 <div id="treeView">
-  <div id="treeSearch">
-    <span id="treeSearchIcon">🔍</span>
-    <input type="search" id="treeSearchInput" placeholder="Zoek persoon…" autocomplete="off">
-  </div>
-  <div id="treeControls">
-    <div class="tree-ctrl-row">
+  <div id="treeToolbar">
+    <div id="treeSearch">
+      <span id="treeSearchIcon">🔍</span>
+      <input type="search" id="treeSearchInput" placeholder="Zoek persoon…" autocomplete="off">
+    </div>
+    <div id="treeNavBtns">
       <button class="tree-btn" onclick="treeZoomBtn(1.3)" title="Inzoomen">＋</button>
       <button class="tree-btn" onclick="treeZoomBtn(0.77)" title="Uitzoomen">－</button>
-      <button class="tree-btn wide" onclick="treeReset()" title="Alles tonen">↺ Reset</button>
-      <button class="tree-btn wide" onclick="treeExpandAll()" title="Alles uitklappen">⊞ Alles</button>
-      <button class="tree-btn wide" onclick="treeCollapseAll()" title="Alles inklappen">⊟ Compact</button>
+      <button class="tree-btn wide" onclick="treeReset()">↺ Reset</button>
+      <button class="tree-btn wide" onclick="treeExpandAll()">⊞ Alles</button>
+      <button class="tree-btn wide" onclick="treeCollapseAll()">⊟ Compact</button>
     </div>
-    <div class="tree-ctrl-row">
-      <button class="tree-btn tree-theme-btn" id="themeBtnLight"   onclick="setTreeMode('light')"   title="Licht thema">☀ Licht</button>
-      <button class="tree-btn tree-theme-btn" id="themeBtnDark"    onclick="setTreeMode('dark')"    title="Donker thema">🌙 Donker</button>
-      <button class="tree-btn tree-theme-btn" id="themeBtnMinimal" onclick="setTreeMode('minimal')" title="Minimaal">⊡ Minimaal</button>
+    <div id="treeThemeBtns">
+      <button class="tree-btn tree-theme-btn" id="themeBtnLight"   onclick="setTreeMode('light')">☀ Licht</button>
+      <button class="tree-btn tree-theme-btn" id="themeBtnDark"    onclick="setTreeMode('dark')">🌙 Donker</button>
+      <button class="tree-btn tree-theme-btn" id="themeBtnMinimal" onclick="setTreeMode('minimal')">⊡ Minimaal</button>
     </div>
   </div>
-  <svg id="treeSvg" style="width:100%;height:100%;display:block;cursor:grab"></svg>
-  <div id="treeHint">Klik op een naam voor details · Klik op ▶ om uit te klappen · Sleep &amp; scroll om te navigeren</div>
+  <div id="treeSvgWrap">
+    <svg id="treeSvg" style="width:100%;height:100%;display:block;cursor:grab"></svg>
+    <div id="treeHint">Klik op ▶ om uit te klappen · Sleep &amp; scroll om te navigeren</div>
+  </div>
 </div>
 
 <!-- Detail Modal -->
@@ -3249,9 +3252,9 @@ function treeReset() {
   computeTreeLayout();
   const positions = Object.values(treeLayouts);
   if (!positions.length) return;
-  const rect = svg ? svg.getBoundingClientRect() : {width:0,height:0};
+  const _swrap = document.getElementById('treeSvgWrap');
+  const rect = _swrap ? _swrap.getBoundingClientRect() : (svg ? svg.getBoundingClientRect() : {width:0,height:0});
   if (!rect.width || !rect.height) {
-    // SVG not painted yet — retry after next frame
     requestAnimationFrame(() => treeReset());
     return;
   }
