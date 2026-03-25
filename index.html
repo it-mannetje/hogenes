@@ -1246,6 +1246,14 @@ var supabase=function(e){function t(e,t){var r={};for(var s in e)Object.prototyp
 
 
 <div id="dbStatus" style="display:none">⬤ verbinden…</div>
+<a id="adminLogoutBtn" href="beheer.html"
+   style="display:none;position:fixed;bottom:38px;right:14px;z-index:50;
+          font-size:11px;color:#786040;text-decoration:none;letter-spacing:0.5px;
+          background:rgba(26,18,8,0.85);padding:4px 10px;border-radius:20px;
+          border:1px solid rgba(200,151,58,0.2);transition:color 0.15s;"
+   onmouseover="this.style.color='#c8973a'" onmouseout="this.style.color='#786040'">
+  🔓 beheer
+</a>
 
 <!-- ── Person Editor ── -->
 <div id="personEditorOverlay" style="display:none">
@@ -2786,24 +2794,46 @@ document.getElementById('grid').addEventListener('click', e => {
 
 document.getElementById('totalCount').textContent = PEOPLE.length;
 buildLegend();
+buildGenFilters();
 
-// Activate edit mode if opened from beheer.html (shared sessionStorage flag)
-if (sessionStorage.getItem('hogenes_edit') === '1') {
-  editMode = true;
-  document.body.classList.add('edit-mode');
-  document.getElementById('dbStatus').style.display = 'block';
+// ── Auth: check Supabase session + sessionStorage fallback ──
+async function checkAuthAndInit() {
+  let isAdmin = false;
+
+  if (sessionStorage.getItem('hogenes_edit') === '1') {
+    isAdmin = true;
+  } else if (dbConfigured) {
+    try {
+      const { data } = await _db.auth.getSession();
+      if (data?.session?.user?.email) {
+        const email = data.session.user.email;
+        const { data: adm } = await _db
+          .from('allowed_admins').select('email').eq('email', email).single();
+        if (adm) {
+          isAdmin = true;
+          sessionStorage.setItem('hogenes_edit', '1');
+          sessionStorage.setItem('hogenes_email', email);
+        }
+      }
+    } catch(e) { /* no auth */ }
+  }
+
+  if (isAdmin) {
+    editMode = true;
+    document.body.classList.add('edit-mode');
+    document.getElementById('dbStatus').style.display = 'block';
+    const lb = document.getElementById('adminLogoutBtn');
+    if (lb) lb.style.display = 'block';
+  }
+
+  await loadOverrides();
+  buildGenFilters();
+  buildLegend();
+  document.getElementById('totalCount').textContent = allPeople().length;
+  render();
 }
 
-loadOverrides().then(() => {
-  render();
-  // Show db status indicator only in edit mode
-  if (editMode) {
-    setTimeout(() => {
-      const el = document.getElementById('dbStatus');
-      if (el) el.style.display = 'block';
-    }, 500);
-  }
-});
+checkAuthAndInit();
 
 
 // ══════════════════════════════════════════════════════
