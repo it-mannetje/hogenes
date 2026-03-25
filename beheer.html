@@ -7,299 +7,280 @@
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,400&display=swap" rel="stylesheet">
 <style>
   :root {
-    --ink:       #1a1208;
-    --parchment: #f7f0e3;
-    --gold:      #c8973a;
-    --gold-light:#e8c470;
-    --sepia:     #6b4a1a;
-    --cream:     #faf4ea;
-    --border:    #e0d4bc;
-    --rust:      #8b3a1a;
+    --ink: #1a1208; --parchment: #f7f0e3; --gold: #c8973a;
+    --gold-light: #e8c470; --sepia: #6b4a1a; --cream: #faf4ea;
+    --border: #e0d4bc; --rust: #8b3a1a;
   }
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body {
-    height: 100%;
-    background: var(--ink);
-    font-family: 'Source Serif 4', serif;
-    color: var(--parchment);
-  }
-
+  html, body { height: 100%; background: var(--ink); font-family: 'Source Serif 4', serif; color: var(--parchment); }
   .page {
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 24px;
+    min-height: 100vh; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; padding: 24px;
     background:
       radial-gradient(ellipse at 20% 50%, rgba(139,58,26,0.12) 0%, transparent 60%),
       radial-gradient(ellipse at 80% 30%, rgba(200,151,58,0.08) 0%, transparent 50%),
       var(--ink);
   }
-
-  .ornament {
-    font-size: 11px;
-    letter-spacing: 4px;
-    text-transform: uppercase;
-    color: var(--gold);
-    margin-bottom: 12px;
-    opacity: 0.7;
+  .ornament { font-size: 11px; letter-spacing: 4px; text-transform: uppercase; color: var(--gold); margin-bottom: 12px; opacity: 0.7; }
+  h1 { font-family: 'Playfair Display', serif; font-size: clamp(24px, 5vw, 34px); font-weight: 700; color: var(--parchment); margin-bottom: 4px; text-align: center; }
+  .subtitle { font-size: 13px; color: #786040; margin-bottom: 40px; text-align: center; }
+  .card { background: #231a0c; border: 1px solid rgba(200,151,58,0.25); border-radius: 14px; padding: 36px 40px 32px; width: min(400px, 100%); box-shadow: 0 24px 64px rgba(0,0,0,0.5); }
+  .card-title { font-family: 'Playfair Display', serif; font-size: 20px; color: var(--parchment); margin-bottom: 6px; display: flex; align-items: center; gap: 10px; }
+  .card-desc { font-size: 13px; color: #786040; margin-bottom: 24px; line-height: 1.6; }
+  .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+  .field label { font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: #786040; }
+  .field input {
+    width: 100%; padding: 12px 14px; font-size: 15px; background: #0e0b06;
+    border: 1.5px solid rgba(200,151,58,0.25); border-radius: 8px;
+    color: var(--parchment); font-family: 'Source Serif 4', serif;
+    outline: none; transition: border-color 0.15s;
   }
-
-  h1 {
-    font-family: 'Playfair Display', serif;
-    font-size: clamp(24px, 5vw, 34px);
-    font-weight: 700;
-    color: var(--parchment);
-    margin-bottom: 4px;
-    text-align: center;
-  }
-
-  .subtitle {
-    font-size: 13px;
-    color: #786040;
-    margin-bottom: 40px;
-    text-align: center;
-  }
-
-  .card {
-    background: #231a0c;
-    border: 1px solid rgba(200,151,58,0.25);
-    border-radius: 14px;
-    padding: 36px 40px 32px;
-    width: min(380px, 100%);
-    box-shadow: 0 24px 64px rgba(0,0,0,0.5);
-  }
-
-  .card-title {
-    font-family: 'Playfair Display', serif;
-    font-size: 20px;
-    color: var(--parchment);
-    margin-bottom: 6px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .card-desc {
-    font-size: 13px;
-    color: #786040;
-    margin-bottom: 28px;
-    line-height: 1.5;
-  }
-
-  .pin-dots {
-    display: flex;
-    gap: 10px;
-    justify-content: center;
-    margin-bottom: 8px;
-  }
-
-  .pin-dot {
-    width: 14px; height: 14px;
-    border-radius: 50%;
-    border: 2px solid rgba(200,151,58,0.35);
-    background: transparent;
-    transition: all 0.15s;
-  }
-  .pin-dot.filled {
-    background: var(--gold);
-    border-color: var(--gold);
-    box-shadow: 0 0 8px rgba(200,151,58,0.5);
-  }
-
-  .pin-input-wrap { position: relative; }
-  #pinInput {
-    width: 100%;
-    padding: 12px 16px;
-    font-size: 22px;
-    letter-spacing: 10px;
-    text-align: center;
-    background: #0e0b06;
-    border: 1.5px solid rgba(200,151,58,0.25);
-    border-radius: 8px;
-    color: var(--parchment);
-    font-family: monospace;
-    outline: none;
-    margin-bottom: 10px;
-    transition: border-color 0.15s;
-    -webkit-text-security: disc;
-  }
-  #pinInput:focus { border-color: var(--gold); }
-  #pinInput.error { border-color: #f08060; animation: shake 0.3s ease; }
-
-  @keyframes shake {
-    0%,100% { transform: translateX(0); }
-    25%      { transform: translateX(-6px); }
-    75%      { transform: translateX(6px); }
-  }
-
-  #pinError {
-    color: #f08060;
-    font-size: 13px;
-    min-height: 20px;
-    text-align: center;
-    margin-bottom: 16px;
-  }
-
-  .btn-row { display: flex; gap: 10px; }
-
-  .btn {
-    flex: 1;
-    padding: 12px 16px;
-    border-radius: 8px;
-    font-family: 'Source Serif 4', serif;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    border: none;
-    transition: all 0.15s;
-  }
-  .btn-primary {
-    background: var(--gold);
-    color: var(--ink);
-  }
+  .field input:focus { border-color: var(--gold); }
+  .field input::placeholder { color: #5a4830; }
+  .btn-row { display: flex; gap: 10px; margin-top: 6px; }
+  .btn { flex: 1; padding: 12px 16px; border-radius: 8px; font-family: 'Source Serif 4', serif; font-size: 14px; font-weight: 600; cursor: pointer; border: none; transition: all 0.15s; }
+  .btn-primary { background: var(--gold); color: var(--ink); }
   .btn-primary:hover { background: var(--gold-light); }
-  .btn-primary:active { transform: scale(0.98); }
-  .btn-secondary {
-    background: rgba(247,240,227,0.07);
-    color: #9a8060;
-    border: 1px solid rgba(247,240,227,0.12);
-  }
+  .btn-primary:disabled { opacity: 0.5; cursor: default; }
+  .btn-secondary { background: rgba(247,240,227,0.07); color: #9a8060; border: 1px solid rgba(247,240,227,0.12); }
   .btn-secondary:hover { background: rgba(247,240,227,0.12); color: var(--parchment); }
-
-  .back-link {
-    margin-top: 28px;
-    font-size: 12px;
-    color: #5a4020;
-    text-decoration: none;
-    letter-spacing: 0.5px;
-    transition: color 0.15s;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-  }
+  .msg { font-size: 13px; min-height: 20px; margin: 10px 0 4px; text-align: center; }
+  .msg.error { color: #f08060; }
+  .msg.success { color: #80c880; }
+  .msg.info { color: #b8a88a; }
+  .state { display: none; }
+  .state.active { display: block; }
+  .check-icon { font-size: 40px; text-align: center; margin-bottom: 16px; }
+  .check-title { font-family: 'Playfair Display', serif; font-size: 20px; color: var(--parchment); text-align: center; margin-bottom: 8px; }
+  .check-sub { font-size: 13px; color: #786040; text-align: center; margin-bottom: 24px; line-height: 1.5; }
+  .back-link { margin-top: 28px; font-size: 12px; color: #5a4020; text-decoration: none; letter-spacing: 0.5px; transition: color 0.15s; display: flex; align-items: center; gap: 5px; }
   .back-link:hover { color: #786040; }
-
-  /* Success state */
-  .success-box {
-    display: none;
-    text-align: center;
-    padding: 8px 0 4px;
-  }
-  .success-icon { font-size: 36px; margin-bottom: 12px; }
-  .success-msg {
-    font-family: 'Playfair Display', serif;
-    font-size: 18px;
-    color: var(--parchment);
-    margin-bottom: 6px;
-  }
-  .success-sub { font-size: 13px; color: #786040; margin-bottom: 20px; }
+  .admin-info { background: rgba(200,151,58,0.1); border: 1px solid rgba(200,151,58,0.25); border-radius: 8px; padding: 12px 16px; margin-bottom: 20px; font-size: 13px; color: #d4a860; }
+  .admin-email { font-weight: 600; color: var(--gold-light); }
+  .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(200,151,58,0.3); border-top-color: var(--gold); border-radius: 50%; animation: spin 0.8s linear infinite; vertical-align: middle; margin-right: 6px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
 </style>
 </head>
 <body>
-
 <div class="page">
   <div class="ornament">◆ Stamboek Familie Hogenes ◆</div>
   <h1>Beheerpagina</h1>
   <p class="subtitle">Foto's en personen beheren</p>
 
   <div class="card">
-    <!-- Login form -->
-    <div id="loginForm">
-      <div class="card-title">🔐 Pincode</div>
-      <p class="card-desc">Voer de beheerderscode in om foto's te kunnen uploaden, bewerken en verwijderen.</p>
 
-      <div class="pin-dots" id="pinDots">
-        <div class="pin-dot" id="dot0"></div>
-        <div class="pin-dot" id="dot1"></div>
-        <div class="pin-dot" id="dot2"></div>
-        <div class="pin-dot" id="dot3"></div>
-        <div class="pin-dot" id="dot4"></div>
-        <div class="pin-dot" id="dot5"></div>
-        <div class="pin-dot" id="dot6"></div>
-        <div class="pin-dot" id="dot7"></div>
+    <!-- State 1: Email input -->
+    <div id="stateEmail" class="state active">
+      <div class="card-title">✉️ Inloggen</div>
+      <p class="card-desc">Voer je e-mailadres in. Je ontvangt een magische inloglink waarmee je direct toegang krijgt.</p>
+      <div class="field">
+        <label>E-mailadres</label>
+        <input id="emailInput" type="email" placeholder="naam@voorbeeld.nl" autocomplete="email">
       </div>
-
-      <div class="pin-input-wrap">
-        <input id="pinInput" type="password" maxlength="8"
-               autocomplete="off" autocorrect="off" spellcheck="false"
-               placeholder="" inputmode="numeric">
-      </div>
-      <div id="pinError"></div>
-
+      <div class="msg" id="emailMsg"></div>
       <div class="btn-row">
         <a class="btn btn-secondary" href="index.html">← Terug</a>
-        <button class="btn btn-primary" onclick="submitPin()">Ontgrendelen</button>
+        <button class="btn btn-primary" id="sendBtn" onclick="sendMagicLink()">Stuur inloglink</button>
       </div>
     </div>
 
-    <!-- Success state -->
-    <div class="success-box" id="successBox">
-      <div class="success-icon">🔓</div>
-      <div class="success-msg">Toegang verleend</div>
-      <p class="success-sub">Je wordt doorgestuurd naar het stamboek…</p>
-      <button class="btn btn-primary" onclick="goToStamboek()">Ga naar stamboek →</button>
+    <!-- State 2: Email sent -->
+    <div id="stateSent" class="state">
+      <div class="check-icon">📬</div>
+      <div class="check-title">Link verstuurd!</div>
+      <p class="check-sub">Controleer je inbox op <strong id="sentEmailDisplay"></strong> en klik op de inloglink.</p>
+      <p class="check-sub" style="font-size:12px;color:#5a4030">Geen e-mail ontvangen? Controleer je spammap of <a href="#" onclick="showEmailState()" style="color:var(--gold)">probeer opnieuw</a>.</p>
     </div>
-  </div>
 
+    <!-- State 3: Verifying / success -->
+    <div id="stateVerify" class="state">
+      <div class="check-icon" id="verifyIcon">⏳</div>
+      <div class="check-title" id="verifyTitle">Inloggen…</div>
+      <p class="check-sub" id="verifySub"><span class="spinner"></span> Sessie wordt geverifieerd…</p>
+      <div class="btn-row" id="verifyActions" style="display:none">
+        <button class="btn btn-primary" onclick="goToStamboek()">Ga naar stamboek →</button>
+      </div>
+    </div>
+
+    <!-- State 4: Logged in (persistent) -->
+    <div id="stateLoggedIn" class="state">
+      <div class="admin-info">
+        Ingelogd als <span class="admin-email" id="loggedInEmail"></span>
+      </div>
+      <div class="check-title" style="margin-bottom:8px">🔓 Beheermodus actief</div>
+      <p class="check-sub">Je hebt toegang tot beheerfuncties in het stamboek.</p>
+      <div class="btn-row">
+        <button class="btn btn-secondary" onclick="logout()">Uitloggen</button>
+        <button class="btn btn-primary" onclick="goToStamboek()">Ga naar stamboek →</button>
+      </div>
+    </div>
+
+    <!-- State 5: Not authorized -->
+    <div id="stateUnauth" class="state">
+      <div class="check-icon">🚫</div>
+      <div class="check-title">Geen toegang</div>
+      <p class="check-sub">Dit e-mailadres staat niet op de beheerlijst. Neem contact op met de beheerder om toegang te krijgen.</p>
+      <div class="btn-row">
+        <button class="btn btn-secondary" onclick="logout(); showEmailState()">Ander adres proberen</button>
+        <a class="btn btn-primary" href="index.html">Terug naar stamboek</a>
+      </div>
+    </div>
+
+  </div>
   <a class="back-link" href="index.html">← Terug naar het stamboek</a>
 </div>
 
 <script>
-// ── Config ────────────────────────────────────────────────
-// These are injected at build time by inject_config.js
-// For local testing, hardcode here:
-const EDIT_PIN = typeof _EDIT_PIN !== 'undefined' ? _EDIT_PIN : '1234';
-// ──────────────────────────────────────────────────────────
+// ── Config (injected at build time by inject_config.js) ───────
+const SUPABASE_URL      = typeof _SUPABASE_URL      !== 'undefined' ? _SUPABASE_URL      : 'https://gbeevlqrctdvsylvrvkz.supabase.co';
+const SUPABASE_ANON_KEY = typeof _SUPABASE_ANON_KEY !== 'undefined' ? _SUPABASE_ANON_KEY : 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiZWV2bHFyY3RkdnN5bHZydmt6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyNzU1MTAsImV4cCI6MjA4OTg1MTUxMH0.h85KTPneni0YYmUGuPPvhhCXa1kYdkwvzSDhl6qpJD4';
+// ─────────────────────────────────────────────────────────────
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+const _db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-const input = document.getElementById('pinInput');
-const dots  = document.querySelectorAll('.pin-dot');
+function showState(id) {
+  document.querySelectorAll('.state').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+function showEmailState() { showState('stateEmail'); }
 
-// Update dot indicators as user types
-input.addEventListener('input', () => {
-  const len = input.value.length;
-  dots.forEach((d, i) => d.classList.toggle('filled', i < len));
-  document.getElementById('pinError').textContent = '';
-  input.classList.remove('error');
-});
-
-input.addEventListener('keydown', e => {
-  if (e.key === 'Enter') submitPin();
-});
-
-function submitPin() {
-  const entered = input.value;
-  if (entered === EDIT_PIN) {
-    // Store edit session
-    sessionStorage.setItem('hogenes_edit', '1');
-    // Show success
-    document.getElementById('loginForm').style.display = 'none';
-    document.getElementById('successBox').style.display = 'block';
-    // Auto-redirect after 1.2s
-    setTimeout(goToStamboek, 1200);
-  } else {
-    input.classList.add('error');
-    document.getElementById('pinError').textContent = 'Onjuiste pincode — probeer opnieuw';
-    input.value = '';
-    dots.forEach(d => d.classList.remove('filled'));
-    setTimeout(() => input.focus(), 50);
+// ── Check for existing session on load ───────────────────────
+async function init() {
+  // Handle magic link callback (hash contains tokens)
+  const hash = window.location.hash;
+  if (hash.includes('access_token') || hash.includes('type=magiclink') || hash.includes('type=signup')) {
+    showState('stateVerify');
+    // Supabase processes the hash automatically
+    const { data, error } = await _db.auth.getSession();
+    if (error || !data.session) {
+      // Try exchanging code for session
+      await new Promise(r => setTimeout(r, 1000));
+      const { data: d2 } = await _db.auth.getSession();
+      if (d2?.session) { await verifyAndActivate(d2.session); return; }
+      showVerifyError('Inloglink verlopen of ongeldig. Probeer opnieuw.');
+      return;
+    }
+    await verifyAndActivate(data.session);
+    return;
   }
+
+  // Check for existing session
+  const { data } = await _db.auth.getSession();
+  if (data?.session) {
+    const email = data.session.user?.email;
+    const ok = await isAllowedAdmin(email);
+    if (ok) {
+      document.getElementById('loggedInEmail').textContent = email;
+      showState('stateLoggedIn');
+      return;
+    }
+  }
+  showState('stateEmail');
+}
+
+async function isAllowedAdmin(email) {
+  if (!email) return false;
+  try {
+    const { data, error } = await _db.from('allowed_admins').select('email').eq('email', email).single();
+    return !error && !!data;
+  } catch(e) { return false; }
+}
+
+async function verifyAndActivate(session) {
+  const email = session.user?.email;
+  const ok = await isAllowedAdmin(email);
+  if (!ok) {
+    await _db.auth.signOut();
+    showState('stateUnauth');
+    return;
+  }
+  // Activate edit mode via sessionStorage
+  sessionStorage.setItem('hogenes_edit', '1');
+  sessionStorage.setItem('hogenes_email', email);
+
+  document.getElementById('verifyIcon').textContent = '✅';
+  document.getElementById('verifyTitle').textContent = 'Welkom, ' + email.split('@')[0] + '!';
+  document.getElementById('verifySub').textContent = 'Je bent ingelogd als beheerder.';
+  document.getElementById('verifyActions').style.display = 'flex';
+  // Auto-redirect after 1.5s
+  setTimeout(goToStamboek, 1500);
+}
+
+function showVerifyError(msg) {
+  document.getElementById('verifyIcon').textContent = '❌';
+  document.getElementById('verifyTitle').textContent = 'Inloggen mislukt';
+  document.getElementById('verifySub').textContent = msg;
+  document.getElementById('verifyActions').style.display = 'none';
+  setTimeout(() => showState('stateEmail'), 3000);
+}
+
+// ── Send magic link ───────────────────────────────────────────
+async function sendMagicLink() {
+  const email = document.getElementById('emailInput').value.trim().toLowerCase();
+  const msgEl = document.getElementById('emailMsg');
+  const btn   = document.getElementById('sendBtn');
+
+  if (!email || !email.includes('@')) {
+    msgEl.className = 'msg error';
+    msgEl.textContent = 'Voer een geldig e-mailadres in';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Versturen…';
+  msgEl.className = 'msg info';
+  msgEl.textContent = '';
+
+  // The magic link redirect must go back to beheer.html
+  const redirectTo = window.location.origin + '/beheer.html';
+
+  const { error } = await _db.auth.signInWithOtp({
+    email,
+    options: { emailRedirectTo: redirectTo }
+  });
+
+  btn.disabled = false;
+  btn.textContent = 'Stuur inloglink';
+
+  if (error) {
+    msgEl.className = 'msg error';
+    msgEl.textContent = error.message || 'Er is iets misgegaan. Probeer opnieuw.';
+    return;
+  }
+
+  document.getElementById('sentEmailDisplay').textContent = email;
+  showState('stateSent');
+}
+
+async function logout() {
+  await _db.auth.signOut();
+  sessionStorage.removeItem('hogenes_edit');
+  sessionStorage.removeItem('hogenes_email');
+  showState('stateEmail');
 }
 
 function goToStamboek() {
   window.location.href = 'index.html';
 }
 
-// Focus input on load
-window.addEventListener('load', () => input.focus());
+// Enter key on email field
+document.getElementById('emailInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') sendMagicLink();
+});
 
-// If already authenticated, show that
-if (sessionStorage.getItem('hogenes_edit') === '1') {
-  document.getElementById('loginForm').style.display = 'none';
-  document.getElementById('successBox').style.display = 'block';
-  document.querySelector('.success-sub').textContent = 'Je bent al ingelogd als beheerder.';
-}
+// ── Auth state listener ───────────────────────────────────────
+_db.auth.onAuthStateChange(async (event, session) => {
+  if (event === 'SIGNED_IN' && session) {
+    // Fired after magic link callback
+    if (document.getElementById('stateVerify').classList.contains('active')) {
+      await verifyAndActivate(session);
+    }
+  }
+});
+
+init();
 </script>
 </body>
 </html>
