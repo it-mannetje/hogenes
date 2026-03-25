@@ -1986,6 +1986,11 @@ const PORTRAITS = {"VII.1":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2
 const BY_ID = {};
 PEOPLE.forEach(p => BY_ID[p.id] = p);
 
+// Build parent map
+const PARENT_OF = {};
+PEOPLE.forEach(p => p.children.forEach(cid => { PARENT_OF[cid] = p.id; }));
+const ROOTS = PEOPLE.filter(p => !PARENT_OF[p.id]);
+
 function allPeople() {
   // Returns PEOPLE merged with custom additions (no duplicates)
   const seen = new Set(PEOPLE.map(p => p.id));
@@ -2798,6 +2803,7 @@ document.getElementById('grid').addEventListener('click', e => {
 
 document.getElementById('totalCount').textContent = PEOPLE.length;
 buildLegend();
+buildGenFilters();
 
 // Activate edit mode if opened from beheer.html (shared sessionStorage flag)
 if (sessionStorage.getItem('hogenes_edit') === '1') {
