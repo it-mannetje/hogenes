@@ -810,12 +810,7 @@ html, body { overflow-x: hidden; }
   }
   .tree-btn:hover { background: rgba(200,151,58,0.3); }
   .tree-btn.wide { width: auto; padding: 0 14px; font-size: 12px; letter-spacing: 1px; }
-  #treeCanvas {
-    width: 100%;
-    height: 100%;
-    cursor: grab;
-  }
-  #treeCanvas:active { cursor: grabbing; }
+
   #treeHint {
     position: absolute;
     bottom: 16px;
@@ -856,17 +851,7 @@ html, body { overflow-x: hidden; }
     pointer-events: none;
     opacity: 0.5;
   }
-  /* Gen labels sidebar */
-  #genLabels {
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 52px;
-    pointer-events: none;
-    z-index: 5;
-    overflow: hidden;
-  }
+
   /* Controls panel - card view */
   #cardControls { display: block; }
   #cardControls.hidden { display: none; }
@@ -1171,20 +1156,7 @@ var supabase=function(e){function t(e,t){var r={};for(var s in e)Object.prototyp
       <input type="search" id="searchInput" placeholder="Zoek op naam, geboorteplaats, beroep…" autocomplete="off">
     </div>
   </div>
-  <div class="filter-row" id="genFilters">
-    <button class="filter-btn active" data-gen="all">Alle generaties</button>
-    <button class="filter-btn" data-gen="1">Gen I</button>
-    <button class="filter-btn" data-gen="2">Gen II</button>
-    <button class="filter-btn" data-gen="3">Gen III</button>
-    <button class="filter-btn" data-gen="4">Gen IV</button>
-    <button class="filter-btn" data-gen="5">Gen V</button>
-    <button class="filter-btn" data-gen="6">Gen VI</button>
-    <button class="filter-btn" data-gen="7">Gen VII</button>
-    <button class="filter-btn" data-gen="8">Gen VIII</button>
-    <button class="filter-btn" data-gen="9">Gen IX</button>
-    <button class="filter-btn" data-gen="10">Gen X</button>
-    <button class="filter-btn" data-gen="11">Gen XI</button>
-  </div>
+  <div class="filter-row" id="genFilters"></div>
   <div class="legend">
     <div class="legend-title">Generatie kleurcodering</div>
     <div class="legend-items" id="legendItems"></div>
@@ -1202,13 +1174,14 @@ var supabase=function(e){function t(e,t){var r={};for(var s in e)Object.prototyp
     <input type="search" id="treeSearchInput" placeholder="Zoek persoon…" autocomplete="off">
   </div>
   <div id="treeControls">
-    <button class="tree-btn" onclick="treeZoom(1.3)" title="Inzoomen">＋</button>
-    <button class="tree-btn" onclick="treeZoom(0.77)" title="Uitzoomen">－</button>
+    <button class="tree-btn" onclick="treeZoomBtn(1.3)" title="Inzoomen">＋</button>
+    <button class="tree-btn" onclick="treeZoomBtn(0.77)" title="Uitzoomen">－</button>
     <button class="tree-btn wide" onclick="treeReset()" title="Alles tonen">↺ Reset</button>
+    <button class="tree-btn wide" onclick="treeExpandAll()" title="Alles uitklappen">⊞ Alles</button>
+    <button class="tree-btn wide" onclick="treeCollapseAll()" title="Alles inklappen">⊟ Compact</button>
   </div>
-  <canvas id="treeCanvas"></canvas>
-  <div id="genLabels"></div>
-  <div id="treeHint">Scroll/pinch om te zoomen · Sleep om te pannen · Klik op een persoon voor details</div>
+  <svg id="treeSvg" style="width:100%;height:100%;display:block;cursor:grab"></svg>
+  <div id="treeHint">Klik op een naam voor details · Klik op ▶ om uit te klappen · Sleep &amp; scroll om te navigeren</div>
 </div>
 
 <!-- Detail Modal -->
@@ -1309,18 +1282,37 @@ var supabase=function(e){function t(e,t){var r={};for(var s in e)Object.prototyp
           <input id="ppBornPlace" type="text" placeholder="Plaats" autocomplete="off">
         </div>
       </div>
+      <div class="pe-row">
+        <div class="pe-field">
+          <label>Overlijdensdatum</label>
+          <input id="ppDied" type="text" placeholder="dd-mm-jjjj" autocomplete="off">
+        </div>
+        <div class="pe-field">
+          <label>Overlijdensplaats</label>
+          <input id="ppDiedPlace" type="text" placeholder="Plaats" autocomplete="off">
+        </div>
+      </div>
       <div class="pe-field">
         <label>Beroep</label>
         <input id="ppProfession" type="text" placeholder="optioneel" autocomplete="off">
       </div>
       <div class="pe-field">
+        <label>Partner</label>
+        <input id="ppSpouse" type="text" placeholder="optioneel" autocomplete="off">
+      </div>
+      <div class="pe-field">
         <label>Aantekening</label>
         <input id="ppNote" type="text" placeholder="optioneel" autocomplete="off">
+      </div>
+      <div class="pe-field" id="ppGenField">
+        <label>Generatie</label>
+        <select id="ppGen" style="background:#0e0b06;border:1.5px solid rgba(200,151,58,0.2);border-radius:6px;padding:9px 12px;color:var(--parchment);font-family:'Source Serif 4',serif;font-size:14px;outline:none;width:100%">
+        </select>
       </div>
     </div>
     <div id="pePersonActions">
       <button class="pe-btn pe-btn-secondary" onclick="closePersonEditor()">Annuleren</button>
-      <button class="pe-btn pe-btn-primary" onclick="saveNewPerson()">&#43; Opslaan</button>
+      <button class="pe-btn pe-btn-primary" id="pePersonSaveBtn" onclick="savePersonEdits()">Opslaan</button>
     </div>
   </div>
 </div>
@@ -1337,9 +1329,19 @@ var supabase=function(e){function t(e,t){var r={};for(var s in e)Object.prototyp
 //  FAMILY DATA  — extracted from Stamboek Hogenes
 // ═══════════════════════════════════════════════
 const GEN_COLORS = {
-  1:'#8b1a1a',2:'#8b3a1a',3:'#7a5c1a',4:'#3a6b2e',5:'#1a4a6b',
-  6:'#4a1a6b',7:'#6b1a4a',8:'#2e5c4a',9:'#6b4a1a',10:'#1a5c6b',11:'#4a6b1a'
+  1:'#8b1a1a', 2:'#8b3a1a', 3:'#7a5c1a', 4:'#3a6b2e', 5:'#1a4a6b',
+  6:'#4a1a6b', 7:'#6b1a4a', 8:'#2e5c4a', 9:'#6b4a1a', 10:'#1a5c6b',
+  11:'#4a6b1a',12:'#5c2e6b',13:'#6b1a5c',14:'#2e6b5c',15:'#6b5c1a',
+  16:'#1a6b5c',17:'#6b2e1a',18:'#1a5c3a',19:'#5c1a6b',20:'#2e1a6b'
 };
+
+function genColor(gen) { return GEN_COLORS[gen] || GEN_COLORS[Math.min(gen, 20)] || '#4a4a4a'; }
+
+function maxGen() {
+  let m = 11;
+  [...PEOPLE, ...customPeople].forEach(p => { if ((p.gen||0) > m) m = p.gen; });
+  return m;
+}
 
 // ─────────────────────────────────────────────────────────
 // SUPABASE CONFIG  — set via Netlify env (replaced at build)
@@ -1347,7 +1349,7 @@ const GEN_COLORS = {
 // ─────────────────────────────────────────────────────────
 const SUPABASE_URL      = 'https://gbeevlqrctdvsylvrvkz.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiZWV2bHFyY3RkdnN5bHZydmt6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyNzU1MTAsImV4cCI6MjA4OTg1MTUxMH0.h85KTPneni0YYmUGuPPvhhCXa1kYdkwvzSDhl6qpJD4';
-const EDIT_PIN          = '2548180'; // WIJZIG DIT naar jouw eigen pincode!
+const EDIT_PIN          = '1234'; // WIJZIG DIT naar jouw eigen pincode!
 // ─────────────────────────────────────────────────────────
 
 let _db = null;
@@ -1367,6 +1369,7 @@ function initSupabase() {
 }
 
 let customPortraits = {};
+let personEdits = {};
 
 function setDbStatus(state, msg) {
   const el = document.getElementById('dbStatus');
@@ -1383,6 +1386,7 @@ async function loadOverrides() {
   if (!dbConfigured) {
     try { const s = localStorage.getItem('hogenes_photos'); if (s) customPortraits = JSON.parse(s); } catch(e) {}
     try { const s2 = localStorage.getItem('hogenes_people'); if (s2) { customPeople = JSON.parse(s2); rebuildIndex(); } } catch(e) {}
+    try { const s3 = localStorage.getItem('hogenes_person_edits'); if (s3) { personEdits = JSON.parse(s3); applyPersonEdits(); } } catch(e) {}
     setDbStatus('', '');
     return;
   }
@@ -1394,6 +1398,8 @@ async function loadOverrides() {
     (data || []).forEach(r => { customPortraits[r.person_id] = r.data; });
     // Also load custom people
     await loadCustomPeople();
+    await loadPersonEdits();
+    applyPersonEdits();
     setDbStatus('ok', 'verbonden');
   } catch(e) {
     setDbStatus('error', 'geen verbinding');
@@ -1968,6 +1974,12 @@ const PORTRAITS = {"VII.1":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2
 const BY_ID = {};
 PEOPLE.forEach(p => BY_ID[p.id] = p);
 
+function allPeople() {
+  // Returns PEOPLE merged with custom additions (no duplicates)
+  const seen = new Set(PEOPLE.map(p => p.id));
+  return [...PEOPLE, ...customPeople.filter(p => !seen.has(p.id))];
+}
+
 // ── Custom people (added via the editor) ──
 let customPeople = []; // array of person objects (same shape as PEOPLE)
 
@@ -2001,20 +2013,43 @@ function displayName(p) {
   return n;
 }
 
+function buildGenFilters() {
+  const el = document.getElementById('genFilters');
+  if (!el) return;
+  const max = maxGen();
+  el.innerHTML = '';
+  const allBtn = document.createElement('button');
+  allBtn.className = 'filter-btn active';
+  allBtn.dataset.gen = 'all';
+  allBtn.textContent = 'Alle generaties';
+  el.appendChild(allBtn);
+  for (let g = 1; g <= max; g++) {
+    const btn = document.createElement('button');
+    btn.className = 'filter-btn';
+    btn.dataset.gen = String(g);
+    btn.textContent = 'Gen ' + toRoman(g);
+    el.appendChild(btn);
+  }
+}
+
 function buildLegend() {
   const el = document.getElementById('legendItems');
-  for (let g=1; g<=11; g++) {
+  if (!el) return;
+  el.innerHTML = '';
+  for (let g = 1; g <= maxGen(); g++) {
     const div = document.createElement('div');
     div.className = 'legend-item';
-    div.innerHTML = `<span class="legend-dot" style="background:${GEN_COLORS[g]}"></span> Generatie ${toRoman(g)}`;
+    div.innerHTML = `<span class="legend-dot" style="background:${genColor(g)}"></span> Generatie ${toRoman(g)}`;
     el.appendChild(div);
   }
 }
 
 function toRoman(n) {
-  const vals = [10,9,5,4,1], syms = ['X','IX','V','IV','I'];
-  let r='';
-  vals.forEach((v,i)=>{while(n>=v){r+=syms[i];n-=v;}});
+  if (n <= 0) return String(n);
+  const vals = [1000,900,500,400,100,90,50,40,10,9,5,4,1];
+  const syms = ['M','CM','D','CD','C','XC','L','XL','X','IX','V','IV','I'];
+  let r = '';
+  vals.forEach((v,i)=>{ while(n>=v){r+=syms[i];n-=v;} });
   return r;
 }
 
@@ -2136,6 +2171,20 @@ function openModal(id, addToHistory = true) {
   // ── Header ──
   document.getElementById('mGenBadge').textContent = `Generatie ${toRoman(p.gen)} · ${p.code}`;
   document.getElementById('mName').textContent = `${p.firstName} ${p.lastName}`;
+
+  // Edit person button (edit mode only)
+  let existingEditBtn = document.getElementById('mEditPersonBtn');
+  if (existingEditBtn) existingEditBtn.remove();
+  if (editMode) {
+    const editBtn = document.createElement('button');
+    editBtn.id = 'mEditPersonBtn';
+    editBtn.className = 'pe-btn pe-btn-secondary';
+    editBtn.style.cssText = 'font-size:12px;padding:5px 12px;margin-top:8px;display:inline-flex;align-items:center;gap:5px;';
+    editBtn.innerHTML = '✎ Gegevens bewerken';
+    editBtn.onclick = () => openEditPersonEditor(p.id);
+    document.getElementById('mNick').after(editBtn);
+  }
+
   // Custom person indicator + delete button
   let existingCustomEl = document.getElementById('mCustomBadge');
   if (existingCustomEl) existingCustomEl.remove();
@@ -2363,7 +2412,8 @@ function render() {
   const grid = document.getElementById('grid');
   grid.innerHTML = '';
 
-  const filtered = PEOPLE.filter(p => {
+  const everyone = allPeople();
+  const filtered = everyone.filter(p => {
     if (currentGen !== 'all' && p.gen !== parseInt(currentGen)) return false;
     if (!q) return true;
     const haystack = [p.firstName, p.lastName, p.nickname, p.born, p.bornPlace,
@@ -2372,9 +2422,9 @@ function render() {
   });
 
   document.getElementById('resultsCount').textContent =
-    filtered.length === PEOPLE.length
-      ? `${PEOPLE.length} personen in het stamboek`
-      : `${filtered.length} van ${PEOPLE.length} personen gevonden`;
+    filtered.length === everyone.length
+      ? `${everyone.length} personen in het stamboek`
+      : `${filtered.length} van ${everyone.length} personen gevonden`;
 
   if (!filtered.length) {
     const div = document.createElement('div');
@@ -2492,66 +2542,211 @@ async function deleteCustomPerson(personId) {
   }
 }
 
+// ──────────────────────────────────────────────────────
+//  PERSON EDITOR  (add child + edit existing)
+// ──────────────────────────────────────────────────────
 let pePersonParentId = null;
+let pePersonEditId   = null;  // null = add new, else = edit existing
 
+// person_edits: overrides for built-in PEOPLE (same as customPeople for custom ones)
+// personEdits declared at top
+
+async function loadPersonEdits() {
+  if (!dbConfigured) {
+    try { const s = localStorage.getItem('hogenes_person_edits'); if (s) personEdits = JSON.parse(s); } catch(e) {}
+    return;
+  }
+  try {
+    const { data, error } = await _db.from('person_edits').select('person_id, data');
+    if (error) throw error;
+    personEdits = {};
+    (data || []).forEach(r => {
+      try { personEdits[r.person_id] = JSON.parse(r.data); } catch(e) {}
+    });
+    try { localStorage.setItem('hogenes_person_edits', JSON.stringify(personEdits)); } catch(e) {}
+  } catch(e) {
+    console.warn('loadPersonEdits:', e.message);
+    try { const s = localStorage.getItem('hogenes_person_edits'); if (s) personEdits = JSON.parse(s); } catch(e2) {}
+  }
+}
+
+async function savePersonEdit(id, edits) {
+  personEdits[id] = { ...(personEdits[id] || {}), ...edits };
+  try { localStorage.setItem('hogenes_person_edits', JSON.stringify(personEdits)); } catch(e) {}
+  // Apply to live BY_ID entry
+  const p = BY_ID[id];
+  if (p) Object.assign(p, edits);
+
+  if (!dbConfigured) return;
+  setDbStatus('syncing', 'opslaan…');
+  try {
+    const { error } = await _db.from('person_edits').upsert(
+      { person_id: id, data: JSON.stringify(personEdits[id]) },
+      { onConflict: 'person_id' }
+    );
+    if (error) throw error;
+    setDbStatus('ok', 'opgeslagen ✓');
+  } catch(e) {
+    setDbStatus('', 'lokaal opgeslagen');
+    console.warn('savePersonEdit:', e.message);
+  }
+}
+
+function applyPersonEdits() {
+  // Apply all stored edits to the live PEOPLE/BY_ID on startup
+  Object.entries(personEdits).forEach(([id, edits]) => {
+    const p = BY_ID[id];
+    if (p) Object.assign(p, edits);
+  });
+}
+
+// ── Open editor: ADD child ───────────────────────────
 function openPersonEditor(parentId) {
   pePersonParentId = parentId;
+  pePersonEditId   = null;
   const parent = BY_ID[parentId];
   document.getElementById('pePersonTitle').textContent = 'Kind toevoegen';
   document.getElementById('pePersonSubtitle').textContent =
     parent ? `Ouder: ${parent.firstName} ${parent.lastName} (${parentId})` : parentId;
-  // Clear fields
-  ['ppFirstName','ppLastName','ppNickname','ppBorn','ppBornPlace','ppProfession','ppNote']
-    .forEach(id => { document.getElementById(id).value = ''; });
-  const peOvl = document.getElementById('personEditorOverlay');
-  peOvl.style.display = 'flex';
+  document.getElementById('pePersonSaveBtn').textContent = '+ Opslaan';
+  clearPersonForm();
+  const parentForGen = BY_ID[parentId];
+  _populateGenSelect(parentForGen ? parentForGen.gen + 1 : maxGen() + 1);
+  document.getElementById('personEditorOverlay').style.display = 'flex';
   setTimeout(() => document.getElementById('ppFirstName').focus(), 50);
+}
+
+// ── Open editor: EDIT existing ───────────────────────
+function openEditPersonEditor(id) {
+  pePersonEditId   = id;
+  pePersonParentId = null;
+  const p = BY_ID[id];
+  if (!p) return;
+  document.getElementById('pePersonTitle').textContent = 'Gegevens bewerken';
+  document.getElementById('pePersonSubtitle').textContent = `${p.code} — ${p.firstName} ${p.lastName}`;
+  document.getElementById('pePersonSaveBtn').textContent = '✓ Opslaan';
+  // Fill form with current values
+  document.getElementById('ppFirstName').value  = p.firstName  || '';
+  document.getElementById('ppLastName').value   = p.lastName   || '';
+  document.getElementById('ppNickname').value   = p.nickname   || '';
+  document.getElementById('ppBorn').value       = p.born       || '';
+  document.getElementById('ppBornPlace').value  = p.bornPlace  || '';
+  document.getElementById('ppDied').value       = p.died       || '';
+  document.getElementById('ppDiedPlace').value  = p.diedPlace  || '';
+  document.getElementById('ppProfession').value = p.profession || '';
+  document.getElementById('ppSpouse').value     = p.spouse     || '';
+  document.getElementById('ppNote').value       = p.note       || '';
+  _populateGenSelect(p.gen);
+  document.getElementById('personEditorOverlay').style.display = 'flex';
+  setTimeout(() => document.getElementById('ppFirstName').focus(), 50);
+}
+
+function _populateGenSelect(selectedGen) {
+  const sel = document.getElementById('ppGen');
+  if (!sel) return;
+  const max = Math.max(maxGen() + 1, 12); // always allow one beyond current max
+  sel.innerHTML = '';
+  for (let g = 1; g <= max; g++) {
+    const opt = document.createElement('option');
+    opt.value = g;
+    opt.textContent = `Generatie ${toRoman(g)}${g === max ? ' (nieuw)' : ''}`;
+    if (g === selectedGen) opt.selected = true;
+    sel.appendChild(opt);
+  }
+}
+
+function clearPersonForm() {
+  ['ppFirstName','ppLastName','ppNickname','ppBorn','ppBornPlace',
+   'ppDied','ppDiedPlace','ppProfession','ppSpouse','ppNote']
+    .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
 }
 
 function closePersonEditor() {
   document.getElementById('personEditorOverlay').style.display = 'none';
   pePersonParentId = null;
+  pePersonEditId   = null;
 }
 
-async function saveNewPerson() {
+// ── Unified save ─────────────────────────────────────
+async function savePersonEdits() {
+  if (pePersonEditId) {
+    await _saveEditExisting();
+  } else {
+    await _saveNewChild();
+  }
+}
+
+async function _saveEditExisting() {
+  const id = pePersonEditId;
   const firstName = document.getElementById('ppFirstName').value.trim();
   const lastName  = document.getElementById('ppLastName').value.trim();
   if (!firstName || !lastName) {
-    document.getElementById('ppFirstName').focus();
     document.getElementById('ppFirstName').style.borderColor = '#f08060';
     setTimeout(() => document.getElementById('ppFirstName').style.borderColor = '', 1500);
     return;
   }
-  const parent = BY_ID[pePersonParentId];
-  const newGen  = parent ? parent.gen + 1 : 12;
+  const selGen = document.getElementById('ppGen');
+  const edits = {
+    firstName:  firstName,
+    lastName:   lastName,
+    nickname:   document.getElementById('ppNickname').value.trim()   || null,
+    born:       document.getElementById('ppBorn').value.trim()       || null,
+    bornPlace:  document.getElementById('ppBornPlace').value.trim()  || null,
+    died:       document.getElementById('ppDied').value.trim()       || null,
+    diedPlace:  document.getElementById('ppDiedPlace').value.trim()  || null,
+    profession: document.getElementById('ppProfession').value.trim() || null,
+    spouse:     document.getElementById('ppSpouse').value.trim()     || null,
+    note:       document.getElementById('ppNote').value.trim()       || null,
+    gen:        selGen ? parseInt(selGen.value) : undefined,
+  };
+  if (!edits.gen) delete edits.gen;
+  closePersonEditor();
+  await savePersonEdit(id, edits);
+  // Refresh modal + cards + tree
+  buildGenFilters();
+  buildLegend();
+  if (navHistory.length > 0 && navPos >= 0) openModal(navHistory[navPos], false);
+  render();
+  if (treeReady) drawTree();
+}
+
+async function _saveNewChild() {
+  const firstName = document.getElementById('ppFirstName').value.trim();
+  const lastName  = document.getElementById('ppLastName').value.trim();
+  if (!firstName || !lastName) {
+    document.getElementById('ppFirstName').style.borderColor = '#f08060';
+    setTimeout(() => document.getElementById('ppFirstName').style.borderColor = '', 1500);
+    return;
+  }
+  const parent  = BY_ID[pePersonParentId];
+  const selGen2 = document.getElementById('ppGen');
+  const newGen  = selGen2 ? parseInt(selGen2.value) : (parent ? parent.gen + 1 : 12);
   const newCode = pePersonParentId + '_' + Date.now().toString(36).slice(-4).toUpperCase();
-  const person = {
+  const person  = {
     id:         newCode,
     gen:        newGen,
     code:       newCode,
     lastName:   lastName,
     firstName:  firstName,
-    nickname:   document.getElementById('ppNickname').value.trim() || null,
-    born:       document.getElementById('ppBorn').value.trim() || null,
-    bornPlace:  document.getElementById('ppBornPlace').value.trim() || null,
-    died:       null, diedPlace: null,
+    nickname:   document.getElementById('ppNickname').value.trim()   || null,
+    born:       document.getElementById('ppBorn').value.trim()       || null,
+    bornPlace:  document.getElementById('ppBornPlace').value.trim()  || null,
+    died:       document.getElementById('ppDied').value.trim()       || null,
+    diedPlace:  document.getElementById('ppDiedPlace').value.trim()  || null,
     profession: document.getElementById('ppProfession').value.trim() || null,
-    spouse:     null,
+    spouse:     document.getElementById('ppSpouse').value.trim()     || null,
     children:   [],
-    note:       document.getElementById('ppNote').value.trim() || null,
+    note:       document.getElementById('ppNote').value.trim()       || null,
     parentId:   pePersonParentId,
     isCustom:   true
   };
-
   const newPersonId = person.id;
   closePersonEditor();
   await upsertCustomPerson(person);
-
-  // Refresh tree layout
+  buildGenFilters();
+  buildLegend();
   if (treeReady) { treeReady = false; computeTreeLayout(); treeReady = true; drawTree(); }
   render();
-
-  // Open the NEW person's modal so user can immediately add a photo
   openModal(newPersonId);
 }
 
@@ -2640,108 +2835,382 @@ function switchView(view) {
 }
 
 // ══════════════════════════════════════════════════════
-//  TREE RENDERER
+//  COLLAPSIBLE TREE  (SVG-based)
 // ══════════════════════════════════════════════════════
-const NW = 148, NH = 54, HGAP = 22, VGAP = 86;
+const NW = 160, NH = 58, HGAP = 18, VGAP = 90;
+
+// Collapse state: ids in this set are COLLAPSED (children hidden)
+const collapsed = new Set();
+// Start with gen 5+ collapsed by default after init
 let treeReady = false;
-let treeLayouts = {}; // id -> {x, y, w}
-let cam = {x:0, y:0, scale:1};
-let dragging = false, lastMouse = null;
 let treeHighlight = new Set();
-const treeImgCache = {};
 
-// build parent map
-const PARENT_OF = {};
-PEOPLE.forEach(p => p.children.forEach(cid => { PARENT_OF[cid] = p.id; }));
-const ROOTS = PEOPLE.filter(p => !PARENT_OF[p.id]);
+// Camera
+let cam = { x: 60, y: 40, scale: 1 };
+let dragging = false, lastMouse = null, didDrag = false;
 
-// (custom portrait storage moved to top)
+// Layout cache
+let treeLayouts = {};  // id -> {x, y, cx}
 
-// ── LAYOUT ──
+// ── Build parent map ──────────────────────────────────
+// (PARENT_OF already built globally)
+
+function allDescendants(id) {
+  const out = [];
+  function walk(n) {
+    const p = BY_ID[n]; if (!p) return;
+    p.children.forEach(c => { out.push(c); walk(c); });
+  }
+  walk(id);
+  return out;
+}
+
+function visibleChildren(id) {
+  const p = BY_ID[id]; if (!p) return [];
+  if (collapsed.has(id)) return [];
+  return p.children.filter(c => BY_ID[c]);
+}
+
+// Reingold-Tilford simplified layout
+function leafCount(id) {
+  const vc = visibleChildren(id);
+  if (!vc.length) return 1;
+  return vc.reduce((s, c) => s + leafCount(c), 0);
+}
+
+function placeNode(id, leftEdge) {
+  const p = BY_ID[id]; if (!p) return leftEdge;
+  const vc = visibleChildren(id);
+  const lc = Math.max(1, leafCount(id));
+  const totalW = lc * NW + (lc - 1) * HGAP;
+  const cx = leftEdge + totalW / 2;
+  const y  = (p.gen - 1) * (NH + VGAP) + VGAP;
+
+  treeLayouts[id] = { x: cx - NW/2, y, cx, gen: p.gen };
+
+  if (vc.length) {
+    let childCursor = leftEdge;
+    vc.forEach(cid => {
+      const clc = Math.max(1, leafCount(cid));
+      const cw  = clc * NW + (clc - 1) * HGAP;
+      placeNode(cid, childCursor);
+      childCursor += cw + HGAP;
+    });
+  }
+  return leftEdge + totalW + HGAP;
+}
+
 function computeTreeLayout() {
   treeLayouts = {};
-  let cursor = 0;
-
-  function leafCount(id) {
-    const p = BY_ID[id];
-    if (!p || !p.children.length) return 1;
-    return p.children.reduce((s,c) => s + leafCount(c), 0);
-  }
-
-  function place(id, leftEdge) {
-    const p = BY_ID[id];
-    if (!p) return leftEdge;
-    const lc = leafCount(id);
-    const totalW = lc * NW + (lc - 1) * HGAP;
-    const cx = leftEdge + totalW / 2;
-    const cy = (p.gen - 1) * (NH + VGAP) + VGAP;
-
-    treeLayouts[id] = { x: cx - NW/2, y: cy, cx, cy, w: NW, h: NH };
-
-    if (p.children.length) {
-      let childCursor = leftEdge;
-      p.children.forEach(cid => {
-        const clc = leafCount(cid);
-        const cw = clc * NW + (clc - 1) * HGAP;
-        place(cid, childCursor);
-        childCursor += cw + HGAP;
-      });
-    }
-    return leftEdge + totalW + HGAP;
-  }
-
   let rx = 0;
-  ROOTS.forEach(r => { rx = place(r.id, rx); rx += HGAP * 2; });
+  ROOTS.forEach(r => { rx = placeNode(r.id, rx); rx += HGAP * 2; });
 }
 
-// ── CANVAS SETUP ──
-let canvas, ctx;
-function initTree() {
-  if (treeReady) { drawTree(); return; }
-  canvas = document.getElementById('treeCanvas');
-  ctx = canvas.getContext('2d');
-  computeTreeLayout();
-  treeReset();
-  treeReady = true;
+// ── SVG rendering ────────────────────────────────────
+const svgNS = 'http://www.w3.org/2000/svg';
+// GC is now genColor() — defined in GEN_COLORS section above
+
+let svg, gEdges, gNodes;
+
+function svgEl(tag, attrs, parent) {
+  const el = document.createElementNS(svgNS, tag);
+  Object.entries(attrs || {}).forEach(([k,v]) => el.setAttribute(k, v));
+  if (parent) parent.appendChild(el);
+  return el;
+}
+
+function initTreeSvg() {
+  svg = document.getElementById('treeSvg');
+  svg.innerHTML = '';
+  // Defs for clip paths
+  const defs = svgEl('defs', {}, svg);
+  // Main group (transformed by camera)
+  const gMain = svgEl('g', { id: 'treeMain' }, svg);
+  gEdges = svgEl('g', { id: 'treeEdges' }, gMain);
+  gNodes = svgEl('g', { id: 'treeNodes' }, gMain);
 
   // Events
-  canvas.addEventListener('mousedown', onMD);
-  canvas.addEventListener('mousemove', onMM);
-  canvas.addEventListener('mouseup', () => dragging = false);
-  canvas.addEventListener('mouseleave', () => dragging = false);
-  canvas.addEventListener('wheel', onWheel, {passive: false});
-  canvas.addEventListener('click', onTreeClick);
-  // Touch
-  canvas.addEventListener('touchstart', onTS, {passive: false});
-  canvas.addEventListener('touchmove', onTM, {passive: false});
-  canvas.addEventListener('touchend', () => { dragging = false; lastTouch = null; });
-  // Resize
-  window.addEventListener('resize', () => { resizeCanvas(); drawTree(); });
+  svg.addEventListener('mousedown', onTMD);
+  svg.addEventListener('mousemove', onTMM);
+  svg.addEventListener('mouseup',   onTMU);
+  svg.addEventListener('mouseleave',onTMU);
+  svg.addEventListener('wheel', onTWheel, { passive: false });
+  svg.addEventListener('click', onTClick);
+  svg.addEventListener('touchstart', onTTS, { passive: false });
+  svg.addEventListener('touchmove',  onTTM, { passive: false });
+  svg.addEventListener('touchend',   onTTE);
+  window.addEventListener('resize', () => { if (treeReady) applyCamera(); });
+}
 
-  document.getElementById('treeSearchInput').addEventListener('input', e => {
-    const q = e.target.value.toLowerCase().trim();
-    treeHighlight = new Set();
-    if (q) PEOPLE.forEach(p => {
-      const hay = [p.firstName, p.lastName, p.nickname, p.born, p.bornPlace, p.profession].filter(Boolean).join(' ').toLowerCase();
-      if (hay.includes(q)) treeHighlight.add(p.id);
+function applyCamera() {
+  const g = document.getElementById('treeMain');
+  if (g) g.setAttribute('transform', `translate(${cam.x},${cam.y}) scale(${cam.scale})`);
+}
+
+// Node image cache
+const nodeImgCache = {};
+
+function drawTree() {
+  if (!svg) return;
+  computeTreeLayout();
+  gEdges.innerHTML = '';
+  gNodes.innerHTML = '';
+
+  const hasHL = treeHighlight.size > 0;
+
+  // Draw edges first
+  Object.keys(treeLayouts).forEach(id => {
+    const p = BY_ID[id]; if (!p) return;
+    const pl = treeLayouts[id];
+    visibleChildren(id).forEach(cid => {
+      const cl = treeLayouts[cid]; if (!cl) return;
+      const faded = hasHL && !treeHighlight.has(id) && !treeHighlight.has(cid);
+      const px = pl.cx, py = pl.y + NH;
+      const cy2 = cl.y;
+      const my = py + (cy2 - py) * 0.45;
+      const path = svgEl('path', {
+        d: `M${px},${py} C${px},${my} ${cl.cx},${my} ${cl.cx},${cy2}`,
+        fill: 'none',
+        stroke: faded ? 'rgba(200,151,58,0.06)' : 'rgba(200,151,58,0.3)',
+        'stroke-width': '1.5'
+      }, gEdges);
     });
-    drawTree();
   });
 
-  resizeCanvas();
-  drawTree();
+  // Draw nodes
+  Object.keys(treeLayouts).forEach(id => {
+    const p = BY_ID[id]; if (!p) return;
+    const l = treeLayouts[id];
+    const color = genColor(p.gen);
+    const vc = visibleChildren(id);
+    const hasChildren = (p.children || []).filter(c => BY_ID[c]).length > 0;
+    const isCollapsed = collapsed.has(id);
+    const faded = hasHL && !treeHighlight.has(id);
+    const highlighted = treeHighlight.has(id);
+
+    const g = svgEl('g', {
+      class: 'tree-node',
+      transform: `translate(${l.x},${l.y})`,
+      opacity: faded ? '0.2' : '1'
+    }, gNodes);
+    g.dataset.id = id;
+
+    // Shadow rect
+    svgEl('rect', { x:2,y:3,width:NW,height:NH,rx:6,
+      fill:'rgba(0,0,0,0.35)',filter:'blur(2px)' }, g);
+
+    // Card bg
+    const bg = svgEl('rect', { x:0,y:0,width:NW,height:NH,rx:6,
+      fill: highlighted ? '#2a200a' : '#1e1608',
+      stroke: highlighted ? '#e8c470' : 'rgba(255,255,255,0.07)',
+      'stroke-width': highlighted ? '2' : '1'
+    }, g);
+
+    // Gen color strip
+    svgEl('rect', { x:0,y:0,width:NW,height:5,rx:3,
+      fill:color, 'clip-path':`inset(0 0 ${NH-5}px 0 round 6px)` }, g);
+    // Fix: proper top strip via two rects
+    svgEl('rect', { x:0,y:0,width:NW,height:5,fill:color }, g);
+    svgEl('rect', { x:0,y:5,width:NW,height:NH-5,rx:0,fill:'none' }, g);
+
+    // Portrait thumbnail
+    const photo = getPortrait(id);
+    const photoW = 32, photoX = 8;
+    const textX = photo ? photoX + photoW + 7 : 10;
+    const textW = NW - textX - 8;
+
+    if (photo) {
+      if (!nodeImgCache[id]) {
+        const img = new Image();
+        img.src = photo;
+        img.onload = () => { nodeImgCache[id] = true; if (treeReady) drawTree(); };
+        nodeImgCache[id] = false;
+      }
+      if (nodeImgCache[id]) {
+        const clipId = 'nc_' + id.replace(/\./g,'_');
+        const defs = svg.querySelector('defs');
+        // Create clip path
+        const cp = svgEl('clipPath', { id: clipId }, defs);
+        svgEl('rect', { x: photoX, y: 9, width: photoW, height: NH-14, rx: 3 }, cp);
+        const img = svgEl('image', {
+          href: photo, x: photoX, y: 9, width: photoW, height: NH-14,
+          'clip-path': `url(#${clipId})`,
+          preserveAspectRatio: 'xMidYMin slice'
+        }, g);
+      }
+    }
+
+    // Name text
+    const name = p.nickname || p.firstName.split(' ')[0];
+    const t1 = svgEl('text', {
+      x: textX, y: 22, fill: '#f7f0e3',
+      'font-family': 'Source Serif 4, serif',
+      'font-size': '12', 'font-weight': '600',
+      'text-anchor': 'start'
+    }, g);
+    t1.textContent = truncate(name + ' ' + p.lastName, Math.floor(textW / 6.5));
+
+    // Birth year + code
+    const meta = (p.born ? p.born.slice(-4) : '') + (p.born ? ' · ' : '') + p.code;
+    const t2 = svgEl('text', {
+      x: textX, y: 36, fill: GC[p.gen] || '#786040',
+      'font-family': 'Source Serif 4, serif',
+      'font-size': '10', opacity: '0.85',
+      'text-anchor': 'start'
+    }, g);
+    t2.textContent = truncate(meta, Math.floor(textW / 5.5));
+
+    // Profession hint
+    if (p.profession) {
+      const t3 = svgEl('text', {
+        x: textX, y: 49, fill: '#786040',
+        'font-family': 'Source Serif 4, serif',
+        'font-size': '9', 'text-anchor': 'start'
+      }, g);
+      t3.textContent = truncate(p.profession.split(';')[0].split('—')[0].trim(), Math.floor(textW / 5));
+    }
+
+    // Toggle button (collapse/expand) — only if has children
+    if (hasChildren) {
+      const btnG = svgEl('g', {
+        class: 'tree-toggle',
+        transform: `translate(${NW/2 - 9}, ${NH + 2})`,
+        cursor: 'pointer'
+      }, g);
+      btnG.dataset.toggle = id;
+      svgEl('circle', { cx:9,cy:7,r:8, fill:'#1e1608', stroke: color, 'stroke-width':'1.5' }, btnG);
+      const arrow = isCollapsed
+        ? `M5,5 L9,9 L13,5`  // down arrow = expand
+        : `M5,9 L9,5 L13,9`; // up arrow = collapse
+      svgEl('path', { d: arrow, fill:'none', stroke: color, 'stroke-width':'1.5',
+        'stroke-linecap':'round','stroke-linejoin':'round' }, btnG);
+      // Collapsed count badge
+      if (isCollapsed) {
+        const hidden = allDescendants(id).length;
+        if (hidden > 0) {
+          const badge = svgEl('g', { transform:`translate(${NW-14}, -8)` }, g);
+          svgEl('circle', { cx:8,cy:8,r:8, fill:color }, badge);
+          const bt = svgEl('text', { x:8,y:12, 'text-anchor':'middle',
+            fill:'#fff', 'font-size':'9', 'font-weight':'700',
+            'font-family':'sans-serif' }, badge);
+          bt.textContent = hidden > 99 ? '99+' : hidden;
+        }
+      }
+    }
+
+    // Invisible hit area for opening modal
+    const hit = svgEl('rect', { x:0,y:0,width:NW,height:NH,rx:6,
+      fill:'transparent', cursor:'pointer', class:'node-hit' }, g);
+    hit.dataset.id = id;
+  });
+
+  applyCamera();
 }
 
-function resizeCanvas() {
-  if (!canvas) return;
-  const rect = canvas.parentElement.getBoundingClientRect();
-  canvas.width = rect.width;
-  canvas.height = rect.height;
+function truncate(str, maxChars) {
+  if (!str) return '';
+  return str.length > maxChars ? str.slice(0, maxChars - 1) + '…' : str;
 }
 
-// ── CAMERA ──
+// ── Camera controls ──────────────────────────────────
+function onTMD(e) {
+  dragging = true; didDrag = false;
+  lastMouse = { x: e.clientX, y: e.clientY };
+  svg.style.cursor = 'grabbing';
+}
+function onTMM(e) {
+  if (!dragging) return;
+  const dx = e.clientX - lastMouse.x;
+  const dy = e.clientY - lastMouse.y;
+  if (Math.abs(dx) + Math.abs(dy) > 3) didDrag = true;
+  cam.x += dx; cam.y += dy;
+  lastMouse = { x: e.clientX, y: e.clientY };
+  applyCamera();
+}
+function onTMU() { dragging = false; svg.style.cursor = 'grab'; }
+
+function onTWheel(e) {
+  e.preventDefault();
+  const factor = e.deltaY < 0 ? 1.12 : 0.89;
+  const rect = svg.getBoundingClientRect();
+  const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+  cam.x = mx + (cam.x - mx) * factor;
+  cam.y = my + (cam.y - my) * factor;
+  cam.scale = Math.max(0.05, Math.min(4, cam.scale * factor));
+  applyCamera();
+}
+
+// Touch
+let lastTouch = null, lastPinchDist = null;
+function onTTS(e) {
+  e.preventDefault();
+  if (e.touches.length === 1) {
+    dragging = true; didDrag = false;
+    lastTouch = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+  } else if (e.touches.length === 2) {
+    lastPinchDist = Math.hypot(
+      e.touches[0].clientX - e.touches[1].clientX,
+      e.touches[0].clientY - e.touches[1].clientY);
+  }
+}
+function onTTM(e) {
+  e.preventDefault();
+  if (e.touches.length === 1 && dragging && lastTouch) {
+    const dx = e.touches[0].clientX - lastTouch.x;
+    const dy = e.touches[0].clientY - lastTouch.y;
+    if (Math.abs(dx) + Math.abs(dy) > 3) didDrag = true;
+    cam.x += dx; cam.y += dy;
+    lastTouch = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    applyCamera();
+  } else if (e.touches.length === 2 && lastPinchDist) {
+    const dist = Math.hypot(
+      e.touches[0].clientX - e.touches[1].clientX,
+      e.touches[0].clientY - e.touches[1].clientY);
+    const factor = dist / lastPinchDist;
+    const mx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+    const my = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+    const rect = svg.getBoundingClientRect();
+    const cx = mx - rect.left, cy = my - rect.top;
+    cam.x = cx + (cam.x - cx) * factor;
+    cam.y = cy + (cam.y - cy) * factor;
+    cam.scale = Math.max(0.05, Math.min(4, cam.scale * factor));
+    lastPinchDist = dist;
+    applyCamera();
+  }
+}
+function onTTE() { dragging = false; lastTouch = null; }
+
+function onTClick(e) {
+  if (didDrag) { didDrag = false; return; }
+  // Toggle button clicked?
+  const toggleEl = e.target.closest('[data-toggle]');
+  if (toggleEl) {
+    const id = toggleEl.dataset.toggle;
+    if (collapsed.has(id)) collapsed.delete(id);
+    else collapsed.add(id);
+    drawTree();
+    return;
+  }
+  // Node hit area clicked?
+  const hitEl = e.target.closest('.node-hit');
+  if (hitEl && hitEl.dataset.id) {
+    openModal(hitEl.dataset.id);
+    return;
+  }
+}
+
+// ── Zoom/reset helpers ────────────────────────────────
+function treeZoomBtn(factor) {
+  const rect = svg.getBoundingClientRect();
+  const cx = rect.width / 2, cy = rect.height / 2;
+  cam.x = cx + (cam.x - cx) * factor;
+  cam.y = cy + (cam.y - cy) * factor;
+  cam.scale = Math.max(0.05, Math.min(4, cam.scale * factor));
+  applyCamera();
+}
+
 function treeReset() {
-  if (!canvas) { setTimeout(treeReset, 50); return; }
+  computeTreeLayout();
   const positions = Object.values(treeLayouts);
   if (!positions.length) return;
   const minX = Math.min(...positions.map(n => n.x));
@@ -2749,279 +3218,68 @@ function treeReset() {
   const minY = Math.min(...positions.map(n => n.y));
   const maxY = Math.max(...positions.map(n => n.y + NH));
   const tw = maxX - minX, th = maxY - minY;
-  const rect = canvas.getBoundingClientRect();
-  const scaleX = rect.width / (tw + 80);
+  const rect = svg.getBoundingClientRect();
+  const scaleX = rect.width  / (tw + 80);
   const scaleY = rect.height / (th + 80);
-  cam.scale = Math.min(scaleX, scaleY, 1.4);
-  cam.x = (rect.width - tw * cam.scale) / 2 - minX * cam.scale;
-  cam.y = 30;
-  drawTree();
+  cam.scale = Math.min(scaleX, scaleY, 1);
+  cam.x = (rect.width  - tw * cam.scale) / 2 - minX * cam.scale;
+  cam.y = (rect.height - th * cam.scale) / 2 - minY * cam.scale;
+  applyCamera();
 }
 
-function treeZoom(factor) {
-  if (!canvas) return;
-  const rect = canvas.getBoundingClientRect();
-  const cx = rect.width / 2, cy = rect.height / 2;
-  cam.x = cx + (cam.x - cx) * factor;
-  cam.y = cy + (cam.y - cy) * factor;
-  cam.scale *= factor;
-  cam.scale = Math.max(0.08, Math.min(4, cam.scale));
+function treeExpandAll() {
+  collapsed.clear();
   drawTree();
+  treeReset();
 }
 
-// ── DRAW ──
-function drawTree() {
-  if (!canvas || !ctx) return;
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  // Background
-  ctx.fillStyle = '#110e07';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  ctx.save();
-  ctx.translate(cam.x, cam.y);
-  ctx.scale(cam.scale, cam.scale);
-
-  const hasHighlight = treeHighlight.size > 0;
-
-  // Draw generation row bands
-  for (let g = 1; g <= 11; g++) {
-    const y = (g - 1) * (NH + VGAP) + VGAP - VGAP * 0.5;
-    const h = NH + VGAP;
-    ctx.fillStyle = g % 2 === 0 ? 'rgba(255,255,255,0.013)' : 'rgba(0,0,0,0)';
-    const positions = Object.values(treeLayouts);
-    if (!positions.length) continue;
-    const minX = Math.min(...positions.map(n => n.x)) - 40;
-    const maxX = Math.max(...positions.map(n => n.x + NW)) + 40;
-    ctx.fillRect(minX, y, maxX - minX, h);
-  }
-
-  // Draw edges
-  PEOPLE.forEach(p => {
-    const pl = treeLayouts[p.id];
-    if (!pl) return;
-    p.children.forEach(cid => {
-      const cl = treeLayouts[cid];
-      if (!cl) return;
-      const fade = hasHighlight && !treeHighlight.has(p.id) && !treeHighlight.has(cid);
-      ctx.beginPath();
-      ctx.strokeStyle = fade ? 'rgba(200,151,58,0.06)' : 'rgba(200,151,58,0.28)';
-      ctx.lineWidth = 1.5;
-      const px = pl.cx, py = pl.y + NH;
-      const cx2 = cl.cx, cy2 = cl.y;
-      const midY = py + (cy2 - py) * 0.5;
-      ctx.moveTo(px, py);
-      ctx.bezierCurveTo(px, midY, cx2, midY, cx2, cy2);
-      ctx.stroke();
+function treeCollapseAll() {
+  ROOTS.forEach(r => {
+    BY_ID[r.id].children.forEach(c => {
+      allDescendants(c).forEach(d => collapsed.add(d));
+      collapsed.add(c);
     });
   });
+  drawTree();
+  treeReset();
+}
 
-  // Draw nodes
-  PEOPLE.forEach(p => {
-    const l = treeLayouts[p.id];
-    if (!l) return;
-    const color = GEN_COLORS[p.gen];
-    const faded = hasHighlight && !treeHighlight.has(p.id);
-    const highlighted = treeHighlight.has(p.id);
-
-    const alpha = faded ? 0.18 : 1;
-    ctx.globalAlpha = alpha;
-
-    // shadow
-    if (!faded) {
-      ctx.shadowColor = 'rgba(0,0,0,0.5)';
-      ctx.shadowBlur = 8;
-      ctx.shadowOffsetY = 3;
+// ── Search ────────────────────────────────────────────
+function initTreeSearch() {
+  document.getElementById('treeSearchInput').addEventListener('input', e => {
+    const q = e.target.value.toLowerCase().trim();
+    treeHighlight = new Set();
+    if (q) {
+      PEOPLE.forEach(p => {
+        const hay = [p.firstName, p.lastName, p.nickname, p.born, p.bornPlace, p.profession]
+          .filter(Boolean).join(' ').toLowerCase();
+        if (hay.includes(q)) {
+          treeHighlight.add(p.id);
+          // Auto-expand ancestors to reveal matches
+          let pid = PARENT_OF[p.id];
+          while (pid) { collapsed.delete(pid); pid = PARENT_OF[pid]; }
+        }
+      });
     }
-
-    // card bg
-    const r = 6;
-    ctx.beginPath();
-    roundRect(ctx, l.x, l.y, NW, NH, r);
-    ctx.fillStyle = highlighted ? '#2a200a' : '#1e1608';
-    ctx.fill();
-
-    if (highlighted) {
-      ctx.strokeStyle = '#e8c470';
-      ctx.lineWidth = 2.5;
-      ctx.stroke();
-    }
-
-    ctx.shadowBlur = 0; ctx.shadowOffsetY = 0; ctx.shadowColor = 'transparent';
-
-    // gen color strip
-    ctx.beginPath();
-    roundRect(ctx, l.x, l.y, NW, 5, [r, r, 0, 0]);
-    ctx.fillStyle = color;
-    ctx.fill();
-
-    // portrait thumbnail in tree node (only when zoomed in enough)
-    if (cam.scale > 0.55 && getPortrait(p.id)) {
-      if (!treeImgCache[p.id]) {
-        const img = new Image();
-        img.src = getPortrait(p.id);
-        img.onload = () => { treeImgCache[p.id] = img; drawTree(); };
-        treeImgCache[p.id] = null; // prevent re-queueing
-      } else if (treeImgCache[p.id]) {
-        try {
-          const ih = NH - 8, iw = Math.round(ih * treeImgCache[p.id].width / treeImgCache[p.id].height);
-          const ix = l.x + 3, iy = l.y + 4;
-          ctx.save();
-          ctx.beginPath();
-          roundRect(ctx, ix, iy, Math.min(iw, 32), ih, 3);
-          ctx.clip();
-          ctx.drawImage(treeImgCache[p.id], ix, iy, Math.min(iw, 32), ih);
-          ctx.restore();
-        } catch(e) {}
-      }
-    }
-    const hasPhoto = cam.scale > 0.55 && getPortrait(p.id);
-    const textOffX = hasPhoto ? 18 : 0;
-
-    // name
-    ctx.fillStyle = highlighted ? '#e8c470' : '#f0e8d8';
-    ctx.font = `600 ${cam.scale > 0.4 ? 12 : 11}px "Source Serif 4", serif`;
-    ctx.textAlign = 'center';
-    const displayFirst = p.firstName.length > 14 ? p.firstName.split(' ')[0] : p.firstName;
-    ctx.fillText(truncate(displayFirst + ' ' + p.lastName, hasPhoto ? 14 : 18), l.cx + textOffX/2, l.y + 23);
-
-    // nickname or code
-    ctx.fillStyle = '#a08060';
-    ctx.font = `10px "Source Serif 4", serif`;
-    if (p.nickname) {
-      ctx.fillText(`"${truncate(p.nickname, 14)}"`, l.cx, l.y + 36);
-    } else {
-      ctx.fillText(p.code, l.cx, l.y + 36);
-    }
-
-    // birth year
-    if (p.born) {
-      const yr = p.born.slice(-4);
-      ctx.fillStyle = '#786040';
-      ctx.font = `9px monospace`;
-      ctx.fillText('⊕ ' + yr, l.cx, l.y + NH - 7);
-    }
-
-    ctx.globalAlpha = 1;
+    drawTree();
   });
-
-  ctx.restore();
-
-  // Generation labels overlay
-  drawGenLabels();
 }
 
-function drawGenLabels() {
-  // Draw on top of canvas - right side labels
-  const labelCanvas = document.getElementById('genLabels');
-  // Use the main canvas for overlaid text labels at fixed screen position
-  ctx.save();
-  for (let g = 1; g <= 11; g++) {
-    const worldY = (g - 1) * (NH + VGAP) + VGAP + NH / 2;
-    const screenY = worldY * cam.scale + cam.y;
-    if (screenY < 10 || screenY > canvas.height - 10) continue;
-    ctx.fillStyle = 'rgba(200,151,58,0.55)';
-    ctx.font = '10px monospace';
-    ctx.textAlign = 'left';
-    ctx.fillText(`Gen ${toRoman(g)}`, 8, screenY + 4);
-  }
-  ctx.restore();
-}
-
-function truncate(s, max) { return s.length > max ? s.slice(0, max - 1) + '…' : s; }
-
-function roundRect(ctx, x, y, w, h, r) {
-  if (typeof r === 'number') r = [r, r, r, r];
-  const [tl, tr, br, bl] = r;
-  ctx.moveTo(x + tl, y);
-  ctx.lineTo(x + w - tr, y);
-  ctx.arcTo(x + w, y, x + w, y + tr, tr);
-  ctx.lineTo(x + w, y + h - br);
-  ctx.arcTo(x + w, y + h, x + w - br, y + h, br);
-  ctx.lineTo(x + bl, y + h);
-  ctx.arcTo(x, y + h, x, y + h - bl, bl);
-  ctx.lineTo(x, y + tl);
-  ctx.arcTo(x, y, x + tl, y, tl);
-}
-
-// ── MOUSE / TOUCH ──
-function onMD(e) {
-  dragging = true;
-  lastMouse = {x: e.clientX, y: e.clientY};
-}
-function onMM(e) {
-  if (!dragging) { updateCursor(e); return; }
-  const dx = e.clientX - lastMouse.x;
-  const dy = e.clientY - lastMouse.y;
-  cam.x += dx; cam.y += dy;
-  lastMouse = {x: e.clientX, y: e.clientY};
+// ── Init ──────────────────────────────────────────────
+function initTree() {
+  if (treeReady) { drawTree(); return; }
+  initTreeSvg();
+  // Default: collapse gen 6+ 
+  PEOPLE.forEach(p => {
+    if (p.gen >= 6 && (p.children || []).filter(c => BY_ID[c]).length > 0) {
+      collapsed.add(p.id);
+    }
+  });
+  computeTreeLayout();
+  treeReset();
+  treeReady = true;
+  initTreeSearch();
   drawTree();
-}
-function updateCursor(e) {
-  const hit = hitTest(e);
-  canvas.style.cursor = hit ? 'pointer' : 'grab';
-}
-function onWheel(e) {
-  e.preventDefault();
-  const factor = e.deltaY < 0 ? 1.12 : 0.89;
-  const rect = canvas.getBoundingClientRect();
-  const mx = e.clientX - rect.left, my = e.clientY - rect.top;
-  cam.x = mx + (cam.x - mx) * factor;
-  cam.y = my + (cam.y - my) * factor;
-  cam.scale = Math.max(0.08, Math.min(4, cam.scale * factor));
-  drawTree();
-}
-let lastTouch = null, lastPinchDist = null;
-function onTS(e) {
-  e.preventDefault();
-  if (e.touches.length === 1) {
-    dragging = true;
-    lastTouch = {x: e.touches[0].clientX, y: e.touches[0].clientY};
-  } else if (e.touches.length === 2) {
-    lastPinchDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX,
-                                e.touches[0].clientY - e.touches[1].clientY);
-  }
-}
-function onTM(e) {
-  e.preventDefault();
-  if (e.touches.length === 1 && dragging && lastTouch) {
-    const dx = e.touches[0].clientX - lastTouch.x;
-    const dy = e.touches[0].clientY - lastTouch.y;
-    cam.x += dx; cam.y += dy;
-    lastTouch = {x: e.touches[0].clientX, y: e.touches[0].clientY};
-    drawTree();
-  } else if (e.touches.length === 2 && lastPinchDist) {
-    const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX,
-                             e.touches[0].clientY - e.touches[1].clientY);
-    const factor = dist / lastPinchDist;
-    const mx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
-    const my = (e.touches[0].clientY + e.touches[1].clientY) / 2;
-    const rect = canvas.getBoundingClientRect();
-    const cx = mx - rect.left, cy = my - rect.top;
-    cam.x = cx + (cam.x - cx) * factor;
-    cam.y = cy + (cam.y - cy) * factor;
-    cam.scale = Math.max(0.08, Math.min(4, cam.scale * factor));
-    lastPinchDist = dist;
-    drawTree();
-  }
-}
-
-function hitTest(e) {
-  const rect = canvas.getBoundingClientRect();
-  const mx = (e.clientX - rect.left - cam.x) / cam.scale;
-  const my = (e.clientY - rect.top  - cam.y) / cam.scale;
-  for (const p of PEOPLE) {
-    const l = treeLayouts[p.id];
-    if (!l) continue;
-    if (mx >= l.x && mx <= l.x + NW && my >= l.y && my <= l.y + NH) return p.id;
-  }
-  return null;
-}
-
-function onTreeClick(e) {
-  if (dragging) return;
-  const id = hitTest(e);
-  if (id) openModal(id);
 }
 
 // ══════════════════════════════════════════════════════════════
