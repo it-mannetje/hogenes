@@ -3232,12 +3232,17 @@ function treeReset() {
   computeTreeLayout();
   const positions = Object.values(treeLayouts);
   if (!positions.length) return;
+  const rect = svg ? svg.getBoundingClientRect() : {width:0,height:0};
+  if (!rect.width || !rect.height) {
+    // SVG not painted yet — retry after next frame
+    requestAnimationFrame(() => treeReset());
+    return;
+  }
   const minX = Math.min(...positions.map(n => n.x));
   const maxX = Math.max(...positions.map(n => n.x + NW));
   const minY = Math.min(...positions.map(n => n.y));
   const maxY = Math.max(...positions.map(n => n.y + NH));
   const tw = maxX - minX, th = maxY - minY;
-  const rect = svg.getBoundingClientRect();
   const scaleX = rect.width  / (tw + 80);
   const scaleY = rect.height / (th + 80);
   cam.scale = Math.min(scaleX, scaleY, 1);
@@ -3323,10 +3328,12 @@ function initTree() {
     }
   });
   computeTreeLayout();
-  treeReset();
   treeReady = true;
   initTreeSearch();
   drawTree();
+  // Delay treeReset until after browser has painted the SVG
+  // (getBoundingClientRect returns 0x0 if called before first paint)
+  requestAnimationFrame(() => requestAnimationFrame(() => treeReset()));
 }
 
 // ══════════════════════════════════════════════════════════════
